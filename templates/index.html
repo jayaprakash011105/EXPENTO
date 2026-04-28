@@ -12,6 +12,39 @@
 <body>
     <div class="app-container">
         
+        <!-- Auth View -->
+        <div id="authView" class="view active" style="min-height: 100vh; background: #fff; display: flex; align-items: center; justify-content: center; z-index: 9999;">
+            <div class="auth-card" style="width: 100%; max-width: 400px; padding: 40px 24px;">
+                <div style="text-align: center; margin-bottom: 40px;">
+                    <div style="width: 60px; height: 60px; background: #000; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                        <span class="material-symbols-rounded" style="color: #fff; font-size: 32px;">account_balance_wallet</span>
+                    </div>
+                    <h1 style="font-size: 28px; font-weight: 800; color: #000; margin-bottom: 8px;">Expento</h1>
+                    <p style="color: #64748b; font-weight: 500;">Your premium finance tracker</p>
+                </div>
+                
+                <form id="authForm" onsubmit="handleAuthSubmit(event)">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; font-size: 13px; font-weight: 700; color: #94a3b8; margin-bottom: 8px;">Email</label>
+                        <input type="email" id="authEmail" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; background: #f8fafc; outline: none; font-weight: 600;" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 30px;">
+                        <label style="display: block; font-size: 13px; font-weight: 700; color: #94a3b8; margin-bottom: 8px;">Password</label>
+                        <input type="password" id="authPassword" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; background: #f8fafc; outline: none; font-weight: 600;" required>
+                    </div>
+                    
+                    <button type="submit" id="authSubmitBtn" class="btn-add-cat" style="width: 100%; padding: 18px; font-size: 16px;">Sign In</button>
+                    
+                    <div style="text-align: center; margin-top: 24px;">
+                        <p style="color: #64748b; font-size: 14px; font-weight: 500;">
+                            <span id="authToggleText">Don't have an account?</span> 
+                            <a href="#" onclick="toggleAuthMode()" id="authToggleLink" style="color: #3b82f6; font-weight: 700; text-decoration: none;">Sign Up</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Notes/Reminders View -->
         <div id="notesView" class="view hidden">
             <div class="notes-view-wrapper">
@@ -42,7 +75,7 @@
         </div>
 
         <!-- Home Screen Content -->
-        <div id="homeView" class="view active">
+        <div id="homeView" class="view hidden">
             <header class="header">
                 <div class="user-info-header">
                     <img src="https://ui-avatars.com/api/?name=John+Jacob&background=1c1c1e&color=fff" class="header-avatar" alt="User Avatar">
@@ -92,21 +125,21 @@
                     <h3>Quick Actions</h3>
                 </div>
                 <div class="quick-actions-grid">
-                    <button class="qa-card" onclick="openModal('addTransactionModal', 'income')">
-                        <div class="qa-icon-wrapper topup"><span class="material-symbols-rounded">payments</span></div>
-                        <span>Topup</span>
+                    <button class="qa-card" onclick="switchTab('loans')">
+                        <div class="qa-icon-wrapper topup"><span class="material-symbols-rounded">real_estate_agent</span></div>
+                        <span>Add Loan</span>
+                    </button>
+                    <button class="qa-card" onclick="switchTab('accounts')">
+                        <div class="qa-icon-wrapper withdraw"><span class="material-symbols-rounded">account_balance</span></div>
+                        <span>Accounts</span>
                     </button>
                     <button class="qa-card" onclick="switchTab('bills')">
                         <div class="qa-icon-wrapper bills"><span class="material-symbols-rounded">receipt_long</span></div>
                         <span>Bills</span>
                     </button>
-                    <button class="qa-card">
-                        <div class="qa-icon-wrapper withdraw"><span class="material-symbols-rounded">account_balance</span></div>
-                        <span>Add Account</span>
-                    </button>
-                    <button class="qa-card" onclick="openModal('budgetModal')">
-                        <div class="qa-icon-wrapper transfer"><span class="material-symbols-rounded">pie_chart</span></div>
-                        <span>Budget</span>
+                    <button class="qa-card" onclick="switchTab('investments')">
+                        <div class="qa-icon-wrapper transfer"><span class="material-symbols-rounded">monitoring</span></div>
+                        <span>Investments</span>
                     </button>
                 </div>
             </section>
@@ -301,16 +334,46 @@
             </div>
         </div>
 
-        <!-- Bills View (New Placeholder) -->
+        <!-- Bills View -->
         <div id="billsView" class="view hidden">
             <header class="header">
                 <div class="greeting-container">
-                    <h1 class="greeting" style="font-size: 24px; color: var(--text-dark);">Bills</h1>
+                    <h1 class="greeting" style="font-size: 24px; color: var(--text-dark);">Upcoming Bills</h1>
                 </div>
+                <button class="add-btn-black" onclick="openModal('addBillModal')">
+                    <span class="material-symbols-rounded">add</span> Add Bill
+                </button>
             </header>
-            <div class="glass-card" style="text-align: center; padding: 40px;">
-                <span class="material-symbols-rounded" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px;">construction</span>
-                <p style="color: #64748b; font-weight: 500;">Bills screen is coming soon!</p>
+            
+            <div class="bills-container" style="padding: 20px;">
+                <div id="billsList" class="transactions-list">
+                    <!-- Bills will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Bill Modal -->
+        <div class="modal-overlay" id="addBillModal">
+            <div class="modal centered-card-modal">
+                <div class="modal-header-exact">
+                    <h3>Add New Bill</h3>
+                    <button class="close-btn-simple" onclick="closeModal('addBillModal')"><span class="material-symbols-rounded">close</span></button>
+                </div>
+                <form id="billForm" class="form-standard" onsubmit="handleBillSubmit(event)">
+                    <div class="form-group">
+                        <label>Bill Name</label>
+                        <input type="text" id="billName" placeholder="e.g. Electricity, Netflix" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <input type="number" id="billAmount" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" id="billDate" required>
+                    </div>
+                    <button type="submit" class="btn-add-cat" style="width: 100%; margin-top: 20px;">Add Bill</button>
+                </form>
             </div>
         </div>
 
@@ -411,7 +474,7 @@
                     </div>
                 </div>
 
-                <button class="btn-logout-settings">
+                <button class="btn-logout-settings" onclick="handleLogout()">
                     <span class="material-symbols-rounded">logout</span>
                     Log Out
                 </button>
@@ -448,7 +511,7 @@
         </div>
 
         <!-- Bottom Navigation -->
-        <nav class="bottom-nav">
+        <nav class="bottom-nav" id="mainNav" style="display: none;">
             <div class="nav-item active" onclick="switchTab('home', this)">
                 <span class="material-symbols-rounded">home</span>
                 <span class="nav-label">Home</span>
@@ -798,6 +861,11 @@
             <button class="btn-add-cat" style="width: 100%;" onclick="closeModal('alertModal')">Got it!</button>
         </div>
     </div>
+
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>

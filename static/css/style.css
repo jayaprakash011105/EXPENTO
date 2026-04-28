@@ -476,6 +476,27 @@ body.dark-theme .modal-header-exact h3 { color: #fff; }
 .alert-icon-circle .material-symbols-rounded { font-size: 32px; }
 
 /* VIBRANT GLASS NOTES STYLES */
+
+/* AUTHENTICATION STYLES */
+.auth-card {
+    background: #fff;
+    border-radius: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.05);
+    border: 1px solid #f1f5f9;
+}
+body.dark-theme .auth-card {
+    background: #1c1c1e;
+    border-color: #2c2c2e;
+}
+body.dark-theme #authView {
+    background: #000 !important;
+}
+body.dark-theme #authEmail, body.dark-theme #authPassword {
+    background: #2c2c2e !important;
+    border-color: #333 !important;
+    color: #fff;
+}
+body.dark-theme .auth-card h1 { color: #fff !important; }
 .notes-view-wrapper {
     position: relative; min-height: 100vh; background: transparent; overflow: hidden;
 }

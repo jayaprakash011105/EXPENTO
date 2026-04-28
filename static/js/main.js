@@ -1,4 +1,22 @@
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyDNqydipSdOVXIJFRKWcrMjXajeAK0moEk",
+    authDomain: "expento-005.firebaseapp.com",
+    projectId: "expento-005",
+    storageBucket: "expento-005.firebasestorage.app",
+    messagingSenderId: "188082132004",
+    appId: "1:188082132004:web:5d9a070206898e471174b1",
+    measurementId: "G-5T63GN28F2"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
 // State
+let currentUser = null;
+let isSignUpMode = false;
 let currentTab = 'home';
 let stats = { total_income: 0, total_expense: 0, balance: 0 };
 let transactions = [];
@@ -7,24 +25,13 @@ let currentNotesFilter = 'Important';
 let selectedTxId = null;
 let selectedBudgetIcon = '🏠';
 
-let notes = [
-    { id: 1, title: 'Grocery', time: '09:00', date: '2026-02-13', category: 'Important', icon: '🛒' },
-    { id: 2, title: 'Dentist Appointment', time: '10:45', date: '2026-02-13', category: 'Important', icon: '🏥' },
-    { id: 3, title: 'Math Class', time: '14:30', date: '2026-02-13', category: 'Important', icon: '📚' },
-    { id: 4, title: 'Yoga Class', time: '15:00', date: '2026-02-14', category: 'Important', icon: '🧘' },
-    { id: 5, title: 'Motor Service', time: '16:30', date: '2026-02-14', category: 'Important', icon: '🏍️' }
-];
-let budgets = [
-    { id: 'Food', name: 'Food & Dining', amount: 500, icon: '🍔' },
-    { id: 'Transport', name: 'Transport', amount: 200, icon: '🚗' },
-    { id: 'Entertainment', name: 'Entertainment', amount: 150, icon: '🍿' },
-    { id: 'Shopping', name: 'Shopping', amount: 300, icon: '🛍️' },
-    { id: 'Bills', name: 'Bills & Utilities', amount: 400, icon: '💸' }
-];
+let notes = [];
+let budgets = [];
 let savingsGoal = 0;
 let globalMonthlyLimit = 850;
 let pendingDelete = null;
 let currentCurrency = 'USD';
+let bills = [];
 const currencyRates = {
     USD: 1,
     INR: 83.12,
@@ -55,8 +62,44 @@ const currencyIcons = {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    loadStats();
-    loadTransactions();
+    // Check Auth State
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('authView').classList.add('hidden');
+            document.getElementById('authView').classList.remove('active');
+            document.getElementById('mainNav').style.display = 'flex';
+            
+            // Set user email in settings
+            const accEmailEl = document.getElementById('accEmail');
+            if (accEmailEl) accEmailEl.value = user.email;
+            
+            // Load Real-time Data
+            syncTransactions();
+            syncNotes();
+            syncUserSettings();
+            syncBudgets();
+            syncBills();
+            
+            switchTab('home');
+        } else {
+            currentUser = null;
+            document.getElementById('mainNav').style.display = 'none';
+            document.querySelectorAll('.view').forEach(v => {
+                v.classList.add('hidden');
+                v.classList.remove('active');
+            });
+            document.getElementById('authView').classList.remove('hidden');
+            document.getElementById('authView').classList.add('active');
+        }
+    });
+
+    // Theme logic
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+    }
+
     setupEventListeners();
 
     // Add Note Form
@@ -130,9 +173,64 @@ function handleDownloadClick() {
     showReceipt(selectedTxId);
 }
 
+// Authentication Methods
+function toggleAuthMode() {
+    isSignUpMode = !isSignUpMode;
+    const btn = document.getElementById('authSubmitBtn');
+    const toggleText = document.getElementById('authToggleText');
+    const toggleLink = document.getElementById('authToggleLink');
+    
+    if (isSignUpMode) {
+        btn.textContent = 'Sign Up';
+        toggleText.textContent = 'Already have an account?';
+        toggleLink.textContent = 'Sign In';
+    } else {
+        btn.textContent = 'Sign In';
+        toggleText.textContent = "Don't have an account?";
+        toggleLink.textContent = 'Sign Up';
+    }
+}
+
+async function handleAuthSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPassword').value;
+    const btn = document.getElementById('authSubmitBtn');
+    
+    btn.disabled = true;
+    btn.textContent = 'Please wait...';
+    
+    try {
+        if (isSignUpMode) {
+            await auth.createUserWithEmailAndPassword(email, password);
+        } else {
+            await auth.signInWithEmailAndPassword(email, password);
+        }
+    } catch (error) {
+        console.error(error);
+        showAlert('Authentication Error', error.message, 'info');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = isSignUpMode ? 'Sign Up' : 'Sign In';
+    }
+}
+
+function handleLogout() {
+    auth.signOut().then(() => {
+        // Reset state
+        transactions = [];
+        stats = { total_income: 0, total_expense: 0, balance: 0 };
+    }).catch((error) => {
+        console.error("Sign Out Error", error);
+    });
+}
+
 // Navigation
 function switchTab(tab, element) {
     currentTab = tab;
+    
+    // Prevent navigation if not authenticated
+    if (!currentUser && tab !== 'auth') return;
     
     // Update Nav Active State
     document.querySelectorAll('.bottom-nav .nav-item').forEach(item => item.classList.remove('active'));
@@ -159,11 +257,12 @@ function switchTab(tab, element) {
     }
 
     // Call screen-specific renders
-    if (tab === 'home') renderAllTransactions();
+    if (tab === 'home') renderTransactions();
     if (tab === 'analysis') renderAnalysisScreen();
     if (tab === 'notes') renderNotes();
     if (tab === 'transactions') renderAllTransactions();
     if (tab === 'settings') renderSettingsScreen();
+    if (tab === 'bills') renderBills();
 }
 
 function showAlert(title, message, type = 'success') {
@@ -199,11 +298,21 @@ function openModal(modalId, txType = null) {
         document.getElementById('txDateDisplay').value = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         document.getElementById('scanStatus').classList.add('hidden');
         if (txType) {
-            document.getElementById('txType').value = txType;
-            typeBtns.forEach(btn => {
-                if (btn.dataset.type === txType) btn.classList.add('active');
-                else btn.classList.remove('active');
-            });
+            if (txType === 'upi') {
+                document.getElementById('txType').value = 'expense';
+                document.getElementById('txIsUpi').value = 'true';
+                typeBtns.forEach(btn => {
+                    if (btn.dataset.type === 'expense') btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            } else {
+                document.getElementById('txType').value = txType;
+                document.getElementById('txIsUpi').value = 'false';
+                typeBtns.forEach(btn => {
+                    if (btn.dataset.type === txType) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            }
         }
     }
 }
@@ -250,16 +359,22 @@ function formatMoney(amount) {
     }).format(converted);
 }
 
-function saveAccountDetails() {
+async function saveAccountDetails() {
     const newName = document.getElementById('accName').value;
-    const newEmail = document.getElementById('accEmail').value;
     
-    // Update Home Header
-    const userNameEl = document.querySelector('.user-name');
-    if (userNameEl) userNameEl.textContent = newName;
-    
-    closeModal('manageAccountModal');
-    showAlert('Profile Updated', 'Your account details have been updated successfully!');
+    if (currentUser) {
+        try {
+            await db.collection('users').doc(currentUser.uid).set({
+                displayName: newName
+            }, { merge: true });
+            
+            closeModal('manageAccountModal');
+            showAlert('Profile Updated', 'Your account details have been updated successfully!');
+        } catch (e) {
+            console.error(e);
+            showAlert('Error', 'Failed to update profile', 'info');
+        }
+    }
 }
 
 function closeModal(modalId) {
@@ -319,7 +434,7 @@ function renderNotes() {
             card.className = `note-item-card ${item.completed ? 'completed' : ''}`;
             card.innerHTML = `
                 <div class="note-content-left">
-                    <div class="note-check-box ${item.completed ? 'checked' : ''}" onclick="event.stopPropagation(); toggleNoteComplete(${item.id})">
+                    <div class="note-check-box ${item.completed ? 'checked' : ''}" onclick="event.stopPropagation(); toggleNoteComplete('${item.id}')">
                         <span class="material-symbols-rounded">check</span>
                     </div>
                     <div class="note-icon-box">${item.icon || '📝'}</div>
@@ -329,10 +444,10 @@ function renderNotes() {
                     </div>
                 </div>
                 <div class="note-actions">
-                    <button class="note-action-btn edit" onclick="event.stopPropagation(); editNote(${item.id})">
+                    <button class="note-action-btn edit" onclick="event.stopPropagation(); editNote('${item.id}')">
                         <span class="material-symbols-rounded">edit</span>
                     </button>
-                    <button class="note-action-btn delete" onclick="event.stopPropagation(); deleteNote(${item.id})">
+                    <button class="note-action-btn delete" onclick="event.stopPropagation(); deleteNote('${item.id}')">
                         <span class="material-symbols-rounded">delete</span>
                     </button>
                 </div>
@@ -348,60 +463,9 @@ function renderNotes() {
     }
 }
 
-function toggleNoteComplete(id) {
-    const note = notes.find(n => n.id === id);
-    if (note) {
-        note.completed = !note.completed;
-        renderNotes();
-    }
-}
-
-function formatDateLabel(dateStr) {
-    const options = { day: 'numeric', month: 'short', weekday: 'short' };
-    return new Date(dateStr).toLocaleDateString('en-GB', options);
-}
-
-function filterNotes(category, element) {
-    currentNotesFilter = category;
-    document.getElementById('notesTitle').innerText = category;
-    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-    element.classList.add('active');
-    renderNotes();
-}
-
 function deleteNote(id) {
     pendingDelete = { id, type: 'note' };
     openModal('deleteConfirmModal');
-}
-
-function handleConfirmDelete() {
-    if (!pendingDelete) return;
-
-    const { id, type } = pendingDelete;
-    
-    if (type === 'note') {
-        notes = notes.filter(n => n.id !== id);
-        renderNotes();
-        closeModal('deleteConfirmModal');
-    } else if (type === 'transaction') {
-        executeTransactionDeletion(id);
-    }
-    
-    pendingDelete = null;
-}
-
-async function executeTransactionDeletion(id) {
-    try {
-        const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
-        if (res.ok) { 
-            loadStats(); 
-            loadTransactions(); 
-            closeModal('deleteConfirmModal');
-        }
-    } catch (e) { 
-        console.error(e); 
-        closeModal('deleteConfirmModal');
-    }
 }
 
 function editNote(id) {
@@ -423,8 +487,9 @@ function editNote(id) {
     openModal('addNoteModal');
 }
 
-function handleAddNote(e) {
+async function handleAddNote(e) {
     e.preventDefault();
+    if (!currentUser) return;
     const form = e.target;
     const editId = form.dataset.editId;
     
@@ -433,30 +498,36 @@ function handleAddNote(e) {
     const date = document.getElementById('noteDate').value;
     const category = document.getElementById('noteCategory').value;
 
-    if (editId) {
-        // Edit existing
-        const noteIndex = notes.findIndex(n => n.id == editId);
-        if (noteIndex > -1) {
-            notes[noteIndex] = { ...notes[noteIndex], title, time, date, category };
-        }
-        delete form.dataset.editId;
-        document.querySelector('#addNoteModal h3').innerText = 'Add New Reminder';
-    } else {
-        // Add new
-        const newNote = {
-            id: Date.now(),
-            title,
-            time,
-            date,
-            category,
-            icon: '📝'
-        };
-        notes.push(newNote);
-    }
+    const noteData = {
+        title, time, date, category,
+        icon: '📝',
+        completed: false
+    };
 
-    renderNotes();
-    closeModal('addNoteModal');
-    form.reset();
+    try {
+        const userNotes = db.collection('users').doc(currentUser.uid).collection('notes');
+        if (editId) {
+            await userNotes.doc(editId).update(noteData);
+            delete form.dataset.editId;
+            document.querySelector('#addNoteModal h3').innerText = 'Add New Reminder';
+        } else {
+            await userNotes.add(noteData);
+        }
+        closeModal('addNoteModal');
+        form.reset();
+    } catch (e) { console.error(e); }
+}
+
+async function toggleNoteComplete(id) {
+    if (!currentUser) return;
+    const note = notes.find(n => n.id === id);
+    if (note) {
+        try {
+            await db.collection('users').doc(currentUser.uid).collection('notes').doc(id).update({
+                completed: !note.completed
+            });
+        } catch (e) { console.error(e); }
+    }
 }
 
 // Global Modal Functions
@@ -494,11 +565,32 @@ function renderAnalysisScreen() {
     document.getElementById('analysisBudgetTotal').textContent = formatMoney(stats.total_expense);
     
     const chart = document.getElementById('analysisChart');
+    if (!chart) return;
     chart.innerHTML = '';
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    days.forEach(day => {
-        const height = Math.floor(Math.random() * 60 + 20);
-        chart.insertAdjacentHTML('beforeend', `<div class="bar" style="height: ${height}%;"><span class="day">${day}</span></div>`);
+    
+    // Calculate last 7 days spending
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const now = new Date();
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        last7Days.push(d);
+    }
+    
+    let maxSpent = 0;
+    const dailyTotals = last7Days.map(d => {
+        const dStr = d.toDateString();
+        const spent = transactions
+            .filter(t => t.type === 'expense' && new Date(t.date).toDateString() === dStr)
+            .reduce((sum, t) => sum + t.amount, 0);
+        if (spent > maxSpent) maxSpent = spent;
+        return { day: days[d.getDay()], date: dStr, amount: spent };
+    });
+
+    dailyTotals.forEach(data => {
+        const height = maxSpent > 0 ? Math.max((data.amount / maxSpent) * 80, 5) : 5;
+        chart.insertAdjacentHTML('beforeend', `<div class="bar" style="height: ${height}%;" title="${data.date}: ${formatMoney(data.amount)}"><span class="day">${data.day}</span></div>`);
     });
     
     renderCategoryBreakdown();
@@ -523,9 +615,9 @@ function renderBudgetScreen() {
     const list = document.getElementById('budgetCategoryList');
     if (list) {
         list.innerHTML = budgets.map(b => {
-            // Calculate spent per specific category (matching the ID/Value from dropdown)
+            // Calculate spent per specific category
             const catSpent = transactions
-                .filter(t => t.type === 'expense' && t.category === b.id)
+                .filter(t => t.type === 'expense' && t.category === b.name)
                 .reduce((acc, t) => acc + t.amount, 0);
             const catPercent = b.amount > 0 ? Math.min(Math.round((catSpent / b.amount) * 100), 100) : 0;
             
@@ -549,18 +641,28 @@ function renderBudgetScreen() {
 
 async function handleBudgetCategorySubmit(e) {
     e.preventDefault();
+    if (!currentUser) return;
+
     const name = e.target.querySelector('input[type="text"]').value;
     const amount = parseFloat(e.target.querySelector('input[type="number"]').value);
     
-    budgets.push({ name, amount, icon: selectedBudgetIcon });
-    
-    e.target.reset();
-    document.querySelectorAll('.icon-opt').forEach(o => o.classList.remove('active'));
-    document.querySelector('.icon-opt').classList.add('active');
-    selectedBudgetIcon = '🏠';
-    
-    closeModal('addBudgetCategoryModal');
-    renderBudgetScreen();
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('budgets').add({
+            name,
+            amount,
+            icon: selectedBudgetIcon
+        });
+        
+        e.target.reset();
+        document.querySelectorAll('.icon-opt').forEach(o => o.classList.remove('active'));
+        document.querySelector('.icon-opt').classList.add('active');
+        selectedBudgetIcon = '🏠';
+        
+        closeModal('addBudgetCategoryModal');
+    } catch (e) {
+        console.error(e);
+        showAlert('Error', 'Failed to add budget category', 'info');
+    }
 }
 
 async function handleSavingsGoalSubmit(e) {
@@ -605,10 +707,31 @@ function applyTimeFilter(filterType) {
     renderAllTransactions();
 }
 
-// CRUD Operations
+// Deletion Logic
 async function deleteTransaction(id) {
     pendingDelete = { id, type: 'transaction' };
     openModal('deleteConfirmModal');
+}
+
+async function handleConfirmDelete() {
+    if (!pendingDelete || !currentUser) return;
+    
+    try {
+        const userDoc = db.collection('users').doc(currentUser.uid);
+        if (pendingDelete.type === 'transaction') {
+            await userDoc.collection('transactions').doc(pendingDelete.id).delete();
+            showAlert('Deleted', 'Transaction removed successfully');
+        } else if (pendingDelete.type === 'note') {
+            await userDoc.collection('notes').doc(pendingDelete.id).delete();
+            showAlert('Deleted', 'Note removed successfully');
+        }
+        
+        closeModal('deleteConfirmModal');
+        pendingDelete = null;
+    } catch (e) {
+        console.error(e);
+        showAlert('Error', 'Failed to delete item', 'info');
+    }
 }
 
 function editTransaction(id) {
@@ -647,82 +770,239 @@ function simulateScan(input) {
     }, 2000);
 }
 
-// API Calls
-async function loadStats() {
+// API Calls & Firestore Sync
+function loadStats() {
+    const income = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
+    const expense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+    stats = { total_income: income, total_expense: expense, balance: income - expense };
+    document.getElementById('totalBalance').textContent = formatMoney(stats.balance);
+    renderAnalysisScreen();
+    renderBudgetScreen();
+    renderSavingsScreen();
+}
+
+function syncTransactions() {
+    db.collection('users').doc(currentUser.uid).collection('transactions')
+        .orderBy('date', 'desc')
+        .onSnapshot(snap => {
+            transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderTransactions();
+            if (currentTab === 'transactions') renderAllTransactions();
+            loadStats();
+        });
+}
+
+function syncNotes() {
+    db.collection('users').doc(currentUser.uid).collection('notes')
+        .orderBy('date', 'asc')
+        .onSnapshot(snap => {
+            notes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderNotes();
+        });
+}
+
+function syncBudgets() {
+    db.collection('users').doc(currentUser.uid).collection('budgets')
+        .onSnapshot(snap => {
+            budgets = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            updateCategoryOptions();
+            renderBudgetScreen();
+        });
+}
+
+function syncBills() {
+    db.collection('users').doc(currentUser.uid).collection('bills')
+        .orderBy('dueDate', 'asc')
+        .onSnapshot(snap => {
+            bills = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderBills();
+        });
+}
+
+async function handleBillSubmit(e) {
+    e.preventDefault();
+    if (!currentUser) return;
+    
+    const data = {
+        name: document.getElementById('billName').value,
+        amount: parseFloat(document.getElementById('billAmount').value),
+        dueDate: document.getElementById('billDate').value,
+        paid: false
+    };
+
     try {
-        const res = await fetch('/api/stats');
-        stats = await res.json();
-        document.getElementById('totalBalance').textContent = formatMoney(stats.balance);
+        await db.collection('users').doc(currentUser.uid).collection('bills').add(data);
+        closeModal('addBillModal');
+        e.target.reset();
+        showAlert('Bill Added', 'Your bill has been scheduled.');
+    } catch (e) { 
+        console.error(e); 
+        showAlert('Error', 'Failed to add bill', 'info');
+    }
+}
+
+function renderBills() {
+    const list = document.getElementById('billsList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (bills.length === 0) {
+        list.innerHTML = '<div style="text-align: center; padding: 40px; color: #94a3b8;">No bills scheduled yet.</div>';
+        return;
+    }
+
+    bills.forEach(bill => {
+        const date = new Date(bill.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const html = `
+            <div class="tx-item" style="background: white; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); opacity: ${bill.paid ? '0.6' : '1'}">
+                <div class="tx-icon-circle" style="background: ${bill.paid ? '#f1f5f9' : '#fff1f2'}; color: ${bill.paid ? '#94a3b8' : '#ef4444'};">
+                    <span class="material-symbols-rounded">${bill.paid ? 'check_circle' : 'receipt'}</span>
+                </div>
+                <div class="tx-details">
+                    <div class="tx-title">${bill.name}</div>
+                    <div class="tx-subtitle">Due ${date}</div>
+                </div>
+                <div class="tx-right">
+                    <div class="tx-amount" style="font-weight: 700;">${formatMoney(bill.amount)}</div>
+                    <button class="pill-btn-gray" style="font-size: 11px; padding: 4px 8px; margin-top: 5px;" onclick="toggleBillPaid('${bill.id}', ${bill.paid})">
+                        ${bill.paid ? 'Mark Unpaid' : 'Mark Paid'}
+                    </button>
+                </div>
+            </div>
+        `;
+        list.insertAdjacentHTML('beforeend', html);
+    });
+}
+
+async function toggleBillPaid(id, currentStatus) {
+    if (!currentUser) return;
+    try {
+        await db.collection('users').doc(currentUser.uid).collection('bills').doc(id).update({
+            paid: !currentStatus
+        });
     } catch (e) { console.error(e); }
 }
 
-async function loadTransactions() {
-    try {
-        const res = await fetch('/api/transactions');
-        transactions = await res.json();
-        renderTransactions();
-        if (currentTab === 'transactions') renderAllTransactions();
-    } catch (e) { console.error(e); }
+function updateCategoryOptions() {
+    const select = document.getElementById('txCategory');
+    if (!select) return;
+    const currentVal = select.value;
+    let html = '';
+    budgets.forEach(b => {
+        html += `<option value="${b.name}">${b.name}</option>`;
+    });
+    // Add default unbudgeted categories
+    const fixedCategories = ['Salary', 'Income', 'Other'];
+    fixedCategories.forEach(cat => {
+        if (!budgets.find(b => b.name === cat)) {
+            html += `<option value="${cat}">${cat}</option>`;
+        }
+    });
+    select.innerHTML = html;
+    if (currentVal && Array.from(select.options).some(o => o.value === currentVal)) {
+        select.value = currentVal;
+    }
+}
+
+function syncUserSettings() {
+    db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            globalMonthlyLimit = data.monthlyLimit || 850;
+            savingsGoal = data.savingsGoal || 0;
+            
+            const displayName = data.displayName || 'John Jacob';
+            
+            // Update UI Name and Avatar
+            document.querySelectorAll('.user-name').forEach(el => el.textContent = displayName);
+            document.querySelectorAll('.header-avatar').forEach(el => {
+                el.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=1c1c1e&color=fff`;
+            });
+            
+            const accNameInput = document.getElementById('accName');
+            if (accNameInput) accNameInput.value = displayName;
+            
+            const accEmailInput = document.getElementById('accEmail');
+            if (accEmailInput && currentUser) accEmailInput.value = currentUser.email;
+
+            renderBudgetScreen();
+            renderSavingsScreen();
+        }
+    });
+}
+
+async function handleBudgetSubmit(e) {
+    e.preventDefault();
+    const newLimit = parseFloat(document.getElementById('budgetLimit').value);
+    if (!isNaN(newLimit) && currentUser) {
+        try {
+            await db.collection('users').doc(currentUser.uid).set({
+                monthlyLimit: newLimit
+            }, { merge: true });
+            closeModal('budgetModal');
+            showAlert('Limit Updated', `Your monthly budget limit has been set to ${formatMoney(newLimit)}`);
+        } catch (e) { console.error(e); }
+    }
+}
+
+async function handleSavingsGoalSubmit(e) {
+    e.preventDefault();
+    const newGoal = parseFloat(document.getElementById('savingsGoalInput').value);
+    if (!isNaN(newGoal) && currentUser) {
+        try {
+            await db.collection('users').doc(currentUser.uid).set({
+                savingsGoal: newGoal
+            }, { merge: true });
+            closeModal('savingsGoalModal');
+            renderSavingsScreen();
+        } catch (e) { console.error(e); }
+    }
 }
 
 async function handleTransactionSubmit(e) {
     e.preventDefault();
-    const form = e.target;
+    if (!currentUser) return;
+
     const txId = document.getElementById('txId').value;
     const isUpdate = txId !== "";
     const submitBtn = document.getElementById('submitBtn');
+    
+    const data = {
+        type: document.getElementById('txType').value,
+        amount: parseFloat(document.getElementById('txAmount').value),
+        category: document.getElementById('txCategory').value,
+        note: document.getElementById('txNote').value,
+        is_upi: document.getElementById('txIsUpi').value === 'true'
+    };
+
+    if (!isUpdate) {
+        data.date = new Date().toISOString();
+    }
+
     submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
 
-    if (isUpdate) {
-        const data = {
-            type: document.getElementById('txType').value,
-            amount: parseFloat(document.getElementById('txAmount').value),
-            category: document.getElementById('txCategory').value,
-            note: document.getElementById('txNote').value
-        };
-        try {
-            const res = await fetch(`/api/transactions/${txId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-            if (res.ok) { 
-                closeModal('addTransactionModal'); 
-                await loadStats(); 
-                await loadTransactions(); 
-                // Force re-render of all dependent screens
-                renderAnalysisScreen();
-                renderBudgetScreen();
-                renderSavingsScreen();
-            }
-        } catch (e) { console.error(e); }
-    } else {
-        const formData = new FormData(form);
-        try {
-            const res = await fetch('/api/transactions', { method: 'POST', body: formData });
-            if (res.ok) { 
-                closeModal('addTransactionModal'); 
-                await loadStats(); 
-                await loadTransactions(); 
-                renderAnalysisScreen();
-                renderBudgetScreen();
-                renderSavingsScreen();
-            }
-        } catch (e) { console.error(e); }
-    }
-    submitBtn.disabled = false;
-}
-
-function handleBudgetSubmit(e) {
-    e.preventDefault();
-    const newLimit = parseFloat(document.getElementById('budgetLimit').value);
-    if (!isNaN(newLimit)) {
-        globalMonthlyLimit = newLimit;
-        renderBudgetScreen();
-        closeModal('budgetModal');
-        showAlert('Limit Updated', `Your monthly budget limit has been set to ${formatMoney(newLimit)}`);
+    try {
+        const userTransactions = db.collection('users').doc(currentUser.uid).collection('transactions');
+        
+        if (isUpdate) {
+            await userTransactions.doc(txId).update(data);
+        } else {
+            await userTransactions.add(data);
+        }
+        
+        closeModal('addTransactionModal');
+        showAlert(isUpdate ? 'Updated' : 'Added', `Transaction ${isUpdate ? 'updated' : 'added'} successfully!`);
+    } catch (e) {
+        console.error(e);
+        showAlert('Error', 'Failed to save transaction', 'info');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = isUpdate ? 'Update Transaction' : 'Add Transaction';
     }
 }
+
+// Removed duplicate handleBudgetSubmit
 
 // Rendering
 function renderTransactions() {
@@ -734,7 +1014,7 @@ function renderTransactions() {
         const dateObj = new Date(tx.date);
         const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         const html = `
-            <div class="tx-item" onclick="selectTransaction(${tx.id}, this)">
+            <div class="tx-item" onclick="selectTransaction('${tx.id}', this)">
                 <div class="tx-icon-circle"><span class="material-symbols-rounded" style="color:#000;">${iconName}</span></div>
                 <div class="tx-details">
                     <h4 class="tx-title">${tx.note || tx.category}</h4>
@@ -785,7 +1065,7 @@ function renderAllTransactions() {
         const dateStr = dateObj.toLocaleDateString('en-GB');
 
         const html = `
-            <div class="tx-item" onclick="selectTransaction(${tx.id}, this)">
+            <div class="tx-item" onclick="selectTransaction('${tx.id}', this)">
                 <div class="tx-icon-circle">
                     <span class="material-symbols-rounded" style="color: #000;">${iconName}</span>
                 </div>
@@ -798,8 +1078,8 @@ function renderAllTransactions() {
                         ${isIncome ? '+' : '-'}${formatMoney(tx.amount)}
                     </div>
                     <div class="tx-actions">
-                        <div class="action-icon-pill edit" onclick="editTransaction(${tx.id}); event.stopPropagation();"><span class="material-symbols-rounded" style="font-size:20px;">edit</span></div>
-                        <div class="action-icon-pill delete" onclick="deleteTransaction(${tx.id}); event.stopPropagation();"><span class="material-symbols-rounded" style="font-size:20px;">delete</span></div>
+                        <div class="action-icon-pill edit" onclick="editTransaction('${tx.id}'); event.stopPropagation();"><span class="material-symbols-rounded" style="font-size:20px;">edit</span></div>
+                        <div class="action-icon-pill delete" onclick="deleteTransaction('${tx.id}'); event.stopPropagation();"><span class="material-symbols-rounded" style="font-size:20px;">delete</span></div>
                     </div>
                 </div>
             </div>
