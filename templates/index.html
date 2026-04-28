@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Expento - Premium Finance Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="theme-color" content="#f2f4f7">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Notes/Reminders View -->
+        <div id="notesView" class="view hidden">
+            <div class="notes-view-wrapper">
+                <div class="notes-bg-blob blob-1"></div>
+                <div class="notes-bg-blob blob-2"></div>
+                
+                <div class="notes-container">
+                    <header class="notes-header">
+                        <h1 id="notesTitle">Important</h1>
+                        <div class="notes-header-btns">
+                            <button class="btn-notes-add" onclick="openModal('addNoteModal')">Add</button>
+                        </div>
+                    </header>
+
+                    <div class="notes-list" id="notesList">
+                        <!-- Dynamic Notes Grouped by Date -->
+                    </div>
+
+                    <div class="notes-category-footer">
+                        <div class="notes-cat-pills">
+                            <button class="cat-pill active" onclick="filterNotes('Important', this)">Important</button>
+                            <button class="cat-pill" onclick="filterNotes('General', this)">General</button>
+                            <button class="cat-pill" onclick="filterNotes('Daily Task', this)">Daily Task</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Home Screen Content -->
+        <div id="homeView" class="view active">
+            <header class="header">
+                <div class="user-info-header">
+                    <img src="https://ui-avatars.com/api/?name=John+Jacob&background=1c1c1e&color=fff" class="header-avatar" alt="User Avatar">
+                    <div class="greeting-text">
+                        <span class="welcome-back">Welcome back,</span>
+                        <h2 class="user-name">John Jacob</h2>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="notification-wrapper">
+                        <button class="header-icon-btn"><span class="material-symbols-rounded">notifications</span></button>
+                        <span class="notification-dot"></span>
+                    </div>
+                    <button class="header-icon-btn" onclick="switchTab('settings')"><span class="material-symbols-rounded">settings</span></button>
+                </div>
+            </header>
+
+            <!-- Balance Section -->
+            <section class="balance-section">
+                <div class="currency-badge">
+                    <span class="material-symbols-rounded" style="font-size:14px; background: #000; color: #fff; border-radius: 50%; padding: 2px; margin-right: 4px;">attach_money</span>
+                    USD
+                </div>
+                <h2 class="balance-amount" id="totalBalance">$0.00</h2>
+                <div class="percentage-pill positive">
+                    <span class="material-symbols-rounded">trending_up</span> +2.10%
+                </div>
+                
+                <div class="actions-pill">
+                    <button class="action-btn-pill" onclick="openModal('addTransactionModal', 'expense')">
+                        <span>Send</span>
+                        <span class="material-symbols-rounded icon-sm">arrow_upward</span>
+                    </button>
+                    <button class="action-btn-center" onclick="openModal('addTransactionModal', 'upi')">
+                        <span class="material-symbols-rounded">qr_code_scanner</span>
+                    </button>
+                    <button class="action-btn-pill" onclick="openModal('addTransactionModal', 'income')">
+                        <span class="material-symbols-rounded icon-sm">arrow_downward</span>
+                        <span>Request</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Updated Quick Actions Grid -->
+            <section class="quick-actions-section">
+                <div class="section-header">
+                    <h3>Quick Actions</h3>
+                </div>
+                <div class="quick-actions-grid">
+                    <button class="qa-card" onclick="openModal('addTransactionModal', 'income')">
+                        <div class="qa-icon-wrapper topup"><span class="material-symbols-rounded">payments</span></div>
+                        <span>Topup</span>
+                    </button>
+                    <button class="qa-card" onclick="switchTab('bills')">
+                        <div class="qa-icon-wrapper bills"><span class="material-symbols-rounded">receipt_long</span></div>
+                        <span>Bills</span>
+                    </button>
+                    <button class="qa-card">
+                        <div class="qa-icon-wrapper withdraw"><span class="material-symbols-rounded">account_balance</span></div>
+                        <span>Add Account</span>
+                    </button>
+                    <button class="qa-card" onclick="openModal('budgetModal')">
+                        <div class="qa-icon-wrapper transfer"><span class="material-symbols-rounded">pie_chart</span></div>
+                        <span>Budget</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Recent Activity -->
+            <section class="recent-activity">
+                <div class="section-header">
+                    <h3>Recent Activity</h3>
+                    <button class="arrow-btn-ghost" onclick="switchTab('transactions')">
+                        <span class="material-symbols-rounded">arrow_forward_ios</span>
+                    </button>
+                </div>
+                <div class="transactions-list" id="homeTransactionsList">
+                    <!-- Transactions will be populated here -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Analysis View -->
+        <div id="analysisView" class="view hidden">
+            <header class="header">
+                <img src="https://ui-avatars.com/api/?name=John+Jacob&background=1c1c1e&color=fff" class="header-avatar" alt="User Avatar">
+                <div class="header-actions">
+                    <button class="header-icon-btn"><span class="material-symbols-rounded">search</span></button>
+                    <button class="header-icon-btn"><span class="material-symbols-rounded">notifications</span></button>
+                </div>
+            </header>
+
+            <!-- Sub Navigation -->
+            <div class="sub-nav-pill-container">
+                <div class="sub-nav-pill active" onclick="switchAnalysisTab('analysis')">Analysis</div>
+                <div class="sub-nav-pill" onclick="switchAnalysisTab('budget')">Budget</div>
+                <div class="sub-nav-pill" onclick="switchAnalysisTab('savings')">Savings</div>
+            </div>
+
+            <!-- Sub Screen: Analysis -->
+            <div id="subAnalysis" class="sub-view active">
+                <div class="analysis-filter-row">
+                    <button class="filter-chip">Week</button>
+                    <button class="filter-chip active">Month</button>
+                    <button class="filter-chip">Year</button>
+                    <button class="filter-chip">All</button>
+                </div>
+
+                <div class="analysis-hero">
+                    <p class="hero-label">Total Balance this Month</p>
+                    <div class="hero-amount-row">
+                        <h1 id="analysisTotalSpent">$0.00</h1>
+                        <span class="trend-up"><span class="material-symbols-rounded">north_east</span> 8.4%</span>
+                    </div>
+                </div>
+
+                <div class="analysis-grid">
+                    <div class="mini-card income">
+                        <p>Income</p>
+                        <h3 id="analysisIncome">$0.00</h3>
+                    </div>
+                    <div class="mini-card budget">
+                        <p>Expense</p>
+                        <h3 id="analysisBudgetTotal">$0.00</h3>
+                    </div>
+                </div>
+
+                <div class="chart-card-full">
+                    <div class="chart-header">
+                        <h4>Daily Spending</h4>
+                        <div class="chart-legend"><span class="dot-blue"></span> Current</div>
+                    </div>
+                    <div class="chart-container-large" id="analysisChart">
+                        <!-- Bar chart populated by JS -->
+                    </div>
+                </div>
+
+                <div class="breakdown-section">
+                    <h4>Breakdown</h4>
+                    <div class="breakdown-list" id="categoryBreakdownList">
+                        <!-- Breakdown items -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sub Screen: Budget -->
+            <div id="subBudget" class="sub-view hidden">
+                <div class="budget-main-card">
+                    <div class="budget-card-header">
+                        <h4>Monthly Budget</h4>
+                        <button class="text-btn" onclick="openModal('budgetModal')">Edit Limit</button>
+                    </div>
+                    <div class="budget-stats">
+                        <span class="spent-text">$0 of $5,000</span>
+                        <span class="percent-text">0%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" style="width: 0%"></div>
+                    </div>
+                    <p class="remaining-text">Remaining: <span>$5,000</span></p>
+                </div>
+
+                <div class="categories-header-row">
+                    <h4>Categories</h4>
+                </div>
+                <button class="add-category-btn-large" onclick="openModal('addBudgetCategoryModal')">
+                    <span class="material-symbols-rounded">add</span> Add Category
+                </button>
+                <div id="budgetCategoryList" class="budget-cat-list">
+                    <!-- List of category budgets -->
+                </div>
+            </div>
+
+            <!-- Sub Screen: Savings -->
+            <div id="subSavings" class="sub-view hidden">
+                <div class="savings-main-card">
+                    <div class="savings-card-header">
+                        <h4>Savings Goal</h4>
+                        <button class="goal-edit-pill" onclick="openModal('savingsGoalModal')">Edit Goal</button>
+                    </div>
+                    <h2 class="savings-amount-big">$0</h2>
+                    <div class="savings-progress-track">
+                        <div class="progress-fill-glow" style="width: 0%"></div>
+                    </div>
+                    <p class="savings-meta">0% of $0 goal</p>
+                </div>
+
+                <div class="breakdown-card-white">
+                    <h4>Savings Breakdown</h4>
+                    <div class="breakdown-row">
+                        <span>Total Income</span>
+                        <span class="val-green">$0</span>
+                    </div>
+                    <div class="breakdown-row">
+                        <span>Total Expenses</span>
+                        <span class="val-red">-$0</span>
+                    </div>
+                    <div class="divider-thin"></div>
+                    <div class="breakdown-row bold">
+                        <span>Current Savings</span>
+                        <span class="val-blue">$0</span>
+                    </div>
+                    <div class="breakdown-row">
+                        <span>Remaining to Goal</span>
+                        <span class="val-black">$0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions View -->
+        <div id="transactionsView" class="view hidden">
+            <header class="header">
+                <img src="https://ui-avatars.com/api/?name=John+Jacob&background=1c1c1e&color=fff" class="header-avatar" alt="User Avatar">
+                <div class="header-actions">
+                    <button class="header-icon-btn"><span class="material-symbols-rounded">search</span></button>
+                    <button class="header-icon-btn"><span class="material-symbols-rounded">notifications</span></button>
+                </div>
+            </header>
+
+            <h1 class="page-title" style="margin: 20px 0; font-size: 28px; font-weight: 700;">All Transactions</h1>
+
+            <div class="transactions-controls">
+                <div class="filter-dropdown">
+                    <span>All Transactions</span>
+                    <span class="material-symbols-rounded">unfold_more</span>
+                </div>
+                <button class="add-btn-black" onclick="openModal('addTransactionModal')">
+                    <span class="material-symbols-rounded" style="font-size: 20px;">add</span> Add
+                </button>
+            </div>
+
+            <div class="transactions-card-main">
+                <div class="card-header-row">
+                    <div class="card-title-group">
+                        <h3>Transactions</h3>
+                    </div>
+                    <div class="card-action-btns">
+                        <button class="pill-btn-gray" onclick="handleDownloadClick()"><span class="material-symbols-rounded">download</span> Download</button>
+                        <div class="custom-dropdown-container">
+                            <button class="pill-btn-gray" onclick="toggleFilterDropdown(event)" id="filterBtn">
+                                <span id="filterBtnText">Month</span> <span class="material-symbols-rounded">expand_more</span>
+                            </button>
+                            <div class="dropdown-menu" id="filterDropdownMenu">
+                                <div class="dropdown-item" onclick="applyTimeFilter('All')">All Time</div>
+                                <div class="dropdown-item" onclick="applyTimeFilter('Month')">This Month</div>
+                                <div class="dropdown-item" onclick="applyTimeFilter('Week')">This Week</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="transactions-list full-list" id="allTransactionsList">
+                    <!-- Transactions populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Bills View (New Placeholder) -->
+        <div id="billsView" class="view hidden">
+            <header class="header">
+                <div class="greeting-container">
+                    <h1 class="greeting" style="font-size: 24px; color: var(--text-dark);">Bills</h1>
+                </div>
+            </header>
+            <div class="glass-card" style="text-align: center; padding: 40px;">
+                <span class="material-symbols-rounded" style="font-size: 48px; color: #cbd5e1; margin-bottom: 16px;">construction</span>
+                <p style="color: #64748b; font-weight: 500;">Bills screen is coming soon!</p>
+            </div>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settingsView" class="view hidden">
+            <header class="header">
+                <div class="greeting-container">
+                    <h1 class="greeting" style="font-size: 24px; color: var(--text-dark);">Settings</h1>
+                </div>
+            </header>
+            
+            <div class="settings-container">
+                <!-- Account Section -->
+                <div class="settings-section">
+                    <h3>Account</h3>
+                    <div class="settings-card" onclick="openModal('manageAccountModal')">
+                        <div class="settings-item">
+                            <div class="item-left">
+                                <div class="item-icon-box blue"><span class="material-symbols-rounded">person</span></div>
+                                <div class="item-text">
+                                    <h4>Manage Account</h4>
+                                    <p>Username, Email, Personal Info</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-rounded">chevron_right</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preferences Section -->
+                <div class="settings-section">
+                    <h3>Preferences</h3>
+                    <div class="settings-card">
+                        <!-- Theme Toggle -->
+                        <div class="settings-item">
+                            <div class="item-left">
+                                <div class="item-icon-box dark"><span class="material-symbols-rounded">dark_mode</span></div>
+                                <div class="item-text">
+                                    <h4>Dark Theme</h4>
+                                    <p>Switch between light and dark mode</p>
+                                </div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <!-- Currency Selection -->
+                        <div class="settings-item">
+                            <div class="item-left">
+                                <div class="item-icon-box green"><span class="material-symbols-rounded">payments</span></div>
+                                <div class="item-text">
+                                    <h4>Currency</h4>
+                                    <p>Real-time conversion</p>
+                                </div>
+                            </div>
+                            <select id="currencySelector" class="settings-select" onchange="handleCurrencyChange(this.value)">
+                                <option value="USD" selected>USD ($)</option>
+                                <option value="INR">INR (₹)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="GBP">GBP (£)</option>
+                                <option value="JPY">JPY (¥)</option>
+                                <option value="CAD">CAD ($)</option>
+                                <option value="AUD">AUD ($)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- App Settings Section -->
+                <div class="settings-section">
+                    <h3>App Settings</h3>
+                    <div class="settings-card">
+                        <div class="settings-item">
+                            <div class="item-left">
+                                <div class="item-icon-box orange"><span class="material-symbols-rounded">notifications</span></div>
+                                <div class="item-text">
+                                    <h4>Notifications</h4>
+                                    <p>Alerts, Reminders, Reports</p>
+                                </div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="settings-item">
+                            <div class="item-left">
+                                <div class="item-icon-box purple"><span class="material-symbols-rounded">security</span></div>
+                                <div class="item-text">
+                                    <h4>Security</h4>
+                                    <p>PIN, Fingerprint, 2FA</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-rounded">chevron_right</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-logout-settings">
+                    <span class="material-symbols-rounded">logout</span>
+                    Log Out
+                </button>
+            </div>
+        </div>
+
+        <!-- Manage Account Modal -->
+        <div class="modal-overlay" id="manageAccountModal">
+            <div class="modal centered-card-modal">
+                <div class="modal-header-exact">
+                    <h3>Manage Account</h3>
+                    <button class="close-btn-simple" onclick="closeModal('manageAccountModal')"><span class="material-symbols-rounded">close</span></button>
+                </div>
+                <div class="account-details-list">
+                    <div class="account-detail-item">
+                        <label>Full Name</label>
+                        <input type="text" id="accName" value="John Jacob">
+                    </div>
+                    <div class="account-detail-item">
+                        <label>Email Address</label>
+                        <input type="email" id="accEmail" value="john.jacob@example.com">
+                    </div>
+                    <div class="account-detail-item">
+                        <label>Username</label>
+                        <input type="text" id="accUser" value="john_jacob24">
+                    </div>
+                    <div class="account-detail-item">
+                        <label>User ID</label>
+                        <input type="text" value="EXP-8892-JJ" readonly style="background: #f8fafc; color: #94a3b8;">
+                    </div>
+                </div>
+                <button class="btn-add-cat" style="width: 100%; margin-top: 20px;" onclick="saveAccountDetails()">Save Changes</button>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="switchTab('home', this)">
+                <span class="material-symbols-rounded">home</span>
+                <span class="nav-label">Home</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('transactions', this)">
+                <span class="material-symbols-rounded">receipt_long</span>
+                <span class="nav-label">Transactions</span>
+            </div>
+            
+            <div class="nav-center-btn" onclick="openModal('addTransactionModal')">
+                <span class="material-symbols-rounded">add</span>
+            </div>
+            
+            <div class="nav-item" onclick="switchTab('analysis', this)">
+                <span class="material-symbols-rounded">analytics</span>
+                <span class="nav-label">Analysis</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('notes', this)">
+                <span class="material-symbols-rounded">event_note</span>
+                <span class="nav-label">Notes</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Redesigned Add Transaction Modal -->
+    <div class="modal-overlay" id="addTransactionModal">
+        <div class="modal exact-design">
+            <div class="modal-header-exact">
+                <h3>Add Transaction</h3>
+                <button class="close-btn-exact" onclick="closeModal('addTransactionModal')"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="modal-body-exact">
+                <form id="transactionForm">
+                    <input type="hidden" id="txId" name="id" value="">
+                    <input type="hidden" id="txType" name="type" value="expense">
+                    <input type="hidden" id="txIsUpi" name="is_upi" value="false">
+                    
+                    <!-- Redesigned Scan Receipt Banner -->
+                    <div class="scan-container-exact">
+                        <div class="scan-receipt-banner" id="scanBanner" onclick="document.getElementById('receiptFile').click()">
+                            <div class="scan-icon-pill">
+                                <span class="material-symbols-rounded">document_scanner</span>
+                            </div>
+                            <div class="scan-text">
+                                <h4>Scan Receipt</h4>
+                                <p>Auto-fill from photo</p>
+                            </div>
+                            <span class="material-symbols-rounded arrow">add_a_photo</span>
+                            <input type="file" id="receiptFile" class="hidden-input" accept="image/*" onchange="simulateScan(this)">
+                        </div>
+
+                        <!-- Scan Progress (Hidden by default, shown during processing) -->
+                        <div id="scanStatus" class="scan-progress hidden">
+                            <div class="progress-bar-scan"></div>
+                            <p>Analyzing receipt...</p>
+                        </div>
+                    </div>
+
+                    <div class="form-group-exact">
+                        <label>Type</label>
+                        <div class="type-buttons-exact">
+                            <button type="button" class="type-btn-exact expense active" data-type="expense">Expense</button>
+                            <button type="button" class="type-btn-exact income" data-type="income">Income</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group-exact">
+                        <label>Description</label>
+                        <input type="text" id="txNote" name="note" placeholder="Enter description">
+                    </div>
+
+                    <div class="form-group-exact">
+                        <label>Amount</label>
+                        <input type="number" id="txAmount" name="amount" placeholder="0.00" step="0.01" required>
+                    </div>
+
+                    <div class="form-group-exact">
+                        <label>Category</label>
+                        <div class="select-wrapper-exact">
+                            <select id="txCategory" name="category" required>
+                                <option value="Food">Food & Dining</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Bills">Bills & Utilities</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Salary">Salary (Income)</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <span class="material-symbols-rounded expand-icon">unfold_more</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group-exact">
+                        <label>Date</label>
+                        <input type="text" id="txDateDisplay" value="3 Feb 2026" readonly>
+                        <input type="hidden" id="txDate" name="date" value="2026-02-03 12:00:00">
+                    </div>
+
+                    <div class="modal-footer-exact">
+                        <button type="button" class="footer-btn cancel" onclick="closeModal('addTransactionModal')">Cancel</button>
+                        <button type="submit" class="footer-btn submit" id="submitBtn">Add Transaction</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Modal -->
+    <div class="modal-overlay" id="budgetModal">
+        <div class="modal centered-card-modal" style="max-width: 360px;">
+            <div class="modal-header-exact">
+                <h3 style="font-size: 20px; font-weight: 800;">Set Monthly Limit</h3>
+                <button class="close-btn-simple" onclick="closeModal('budgetModal')"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="modal-body-exact" style="margin-top: 20px;">
+                <form id="budgetForm" class="form-standard">
+                    <div class="form-group">
+                        <label>New Monthly Limit</label>
+                        <input type="number" id="budgetLimit" placeholder="Enter amount" step="0.01" required>
+                    </div>
+                    <button type="submit" class="btn-add-cat" style="width: 100%; margin-top: 10px;">Apply Limit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal (Deep Printer Slot Design) -->
+    <div class="modal-overlay" id="receiptModal">
+        <div class="modal payment-status-design">
+            <div class="status-header">
+                <button class="icon-btn-ghost" onclick="closeModal('receiptModal')">
+                    <span class="material-symbols-rounded">arrow_back</span>
+                </button>
+                <h3>Payment Status</h3>
+                <button class="icon-btn-ghost">
+                    <span class="material-symbols-rounded">ios_share</span>
+                </button>
+            </div>
+            
+            <div class="receipt-printer-wrapper">
+                <div class="printer-slot-deep">
+                    <div class="printer-slot-inner"></div>
+                </div>
+                
+                <div class="receipt-paper">
+                    <div class="paper-inner-shadow"></div>
+                    
+                    <div class="paper-top-receipt">
+                        <div class="dashed-line"></div>
+                        <div class="mono-text" id="receiptId">Transaction - #TXN-2499</div>
+                        <div class="dashed-line"></div>
+                    </div>
+                    
+                    <div class="paper-totals">
+                        <div class="paper-row-flex">
+                            <span class="label-text">Total</span>
+                            <span class="amount-text" id="receiptAmount">$30,000</span>
+                        </div>
+                        <div class="paper-row-flex" style="margin-top: 12px;">
+                            <span class="label-text">Date</span>
+                            <span class="amount-text-small" id="receiptDate">3 Feb 2026</span>
+                        </div>
+                    </div>
+
+                    <div class="paper-list-receipt">
+                        <div class="list-item-receipt">
+                            <div class="item-left-receipt">
+                                <div class="avatar-circle">
+                                    <span class="material-symbols-rounded">category</span>
+                                </div>
+                                <span class="item-name" id="receiptCategory">Food</span>
+                            </div>
+                            <div class="badge-receipt success">
+                                <span class="material-symbols-rounded icon-mini">check_circle</span> Paid
+                            </div>
+                        </div>
+                        <div class="list-item-receipt">
+                            <div class="item-left-receipt">
+                                <div class="avatar-circle">
+                                    <span class="material-symbols-rounded">receipt_long</span>
+                                </div>
+                                <span class="item-name" id="receiptNote">Pizza</span>
+                            </div>
+                            <div class="badge-receipt success">
+                                <span class="material-symbols-rounded icon-mini">check_circle</span> Paid
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-box-receipt">
+                        <div class="status-box-header">
+                            <span class="label-text">Payment Status</span>
+                            <span class="status-text-bold">SUCCESS</span>
+                        </div>
+                        <div class="progress-track-receipt">
+                            <div class="track-dot active"><span class="material-symbols-rounded">check</span></div>
+                            <div class="track-line active"></div>
+                            <div class="track-dot active"><span class="material-symbols-rounded">check</span></div>
+                            <div class="track-line active"></div>
+                            <div class="track-dot active"><span class="material-symbols-rounded">check</span></div>
+                            <div class="track-line active"></div>
+                            <div class="track-dot last"><div class="inner-dot"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="paper-footer-btns">
+                        <button class="btn-dark-receipt" onclick="closeModal('receiptModal')">Done</button>
+                        <button class="btn-outline-receipt" onclick="window.print()">Download Invoice</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="method-section-receipt">
+                <div class="method-row-receipt">
+                    <span class="label-text">Payment Method</span>
+                    <div class="method-details-receipt">
+                        <span>Wallet Balance</span>
+                        <div class="card-icon-blue"></div>
+                    </div>
+                </div>
+                <button class="btn-pay-now" onclick="closeModal('receiptModal')">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Budget Category Modal -->
+    <div class="modal-overlay" id="addBudgetCategoryModal">
+        <div class="modal centered-card-modal">
+            <div class="modal-header-exact">
+                <h3>Add Budget Category</h3>
+                <button class="close-btn-simple" onclick="closeModal('addBudgetCategoryModal')">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <form id="budgetCategoryForm" class="form-standard">
+                <div class="form-group">
+                    <label>Category Name</label>
+                    <input type="text" placeholder="e.g., Food, Transport, Entertainment" required>
+                </div>
+                <div class="form-group">
+                    <label>Budget Amount</label>
+                    <input type="number" placeholder="Enter budget for this category" required>
+                </div>
+                <div class="form-group">
+                    <label>Icon</label>
+                    <div class="icon-selector-grid">
+                        <div class="icon-opt active">🏠</div>
+                        <div class="icon-opt">🍔</div>
+                        <div class="icon-opt">🚗</div>
+                        <div class="icon-opt">🛍️</div>
+                        <div class="icon-opt">🎬</div>
+                        <div class="icon-opt">💰</div>
+                        <div class="icon-opt">✈️</div>
+                        <div class="icon-opt">🏥</div>
+                        <div class="icon-opt">📱</div>
+                        <div class="icon-opt">⚡</div>
+                        <div class="icon-opt">🎓</div>
+                        <div class="icon-opt">🎮</div>
+                    </div>
+                </div>
+                <div class="modal-footer-dual">
+                    <button type="button" class="btn-cancel" onclick="closeModal('addBudgetCategoryModal')">Cancel</button>
+                    <button type="submit" class="btn-add-cat">Add Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Savings Goal Modal -->
+    <div class="modal-overlay" id="savingsGoalModal">
+        <div class="modal centered-card-modal">
+            <div class="modal-header-exact">
+                <h3>Set Savings Goal</h3>
+                <button class="close-btn-simple" onclick="closeModal('savingsGoalModal')">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <form id="savingsGoalForm" class="form-standard">
+                <div class="form-group">
+                    <label>Target Amount</label>
+                    <input type="number" id="savingsGoalInput" placeholder="Enter your target savings amount" required>
+                </div>
+                <div class="modal-footer-dual">
+                    <button type="button" class="btn-cancel" onclick="closeModal('savingsGoalModal')">Cancel</button>
+                    <button type="submit" class="btn-add-cat">Save Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Note Modal -->
+    <div class="modal-overlay" id="addNoteModal">
+        <div class="modal centered-card-modal">
+            <div class="modal-header-exact">
+                <h3>Add New Reminder</h3>
+                <button class="close-btn-simple" onclick="closeModal('addNoteModal')">×</button>
+            </div>
+            <form id="addNoteForm" class="form-standard">
+                <div class="form-group">
+                    <label>Task / Note Title</label>
+                    <input type="text" id="noteTitle" placeholder="e.g. Grocery Shop" required>
+                </div>
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="time" id="noteTime" required>
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="noteDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="noteCategory" class="bw-input-small" style="border: 1px solid #f1f5f9; padding: 10px; border-radius: 12px;">
+                        <option value="Important">Important</option>
+                        <option value="General">General</option>
+                        <option value="Daily Task">Daily Task</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-add-cat">Save Reminder</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteConfirmModal">
+        <div class="modal centered-card-modal" style="max-width: 340px; padding: 32px 24px; text-align: center;">
+            <div class="delete-icon-circle">
+                <span class="material-symbols-rounded">delete_forever</span>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 800; margin: 20px 0 10px;">Are you sure?</h3>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin-bottom: 24px;">This action cannot be undone. The item will be permanently removed.</p>
+            <div class="modal-footer-dual">
+                <button class="btn-cancel" onclick="closeModal('deleteConfirmModal')">No, Cancel</button>
+                <button class="btn-delete-final" id="confirmDeleteBtn">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert / Success Modal -->
+    <div class="modal-overlay" id="alertModal">
+        <div class="modal centered-card-modal" style="max-width: 320px; padding: 32px 24px; text-align: center;">
+            <div class="alert-icon-circle" id="alertIconBox">
+                <span class="material-symbols-rounded" id="alertIcon">check_circle</span>
+            </div>
+            <h3 id="alertTitle" style="font-size: 20px; font-weight: 800; margin: 20px 0 10px;">Success!</h3>
+            <p id="alertMessage" style="color: #64748b; font-size: 14px; line-height: 1.5; margin-bottom: 24px;">Your changes have been saved successfully.</p>
+            <button class="btn-add-cat" style="width: 100%;" onclick="closeModal('alertModal')">Got it!</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
