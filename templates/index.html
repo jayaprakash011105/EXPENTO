@@ -6,14 +6,27 @@
     <title>Expento - Premium Finance Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=2) }}">
     <meta name="theme-color" content="#f2f4f7">
 </head>
 <body>
     <div class="app-container">
+        <!-- Splash Screen -->
+        <div id="splashScreen" class="splash-screen">
+            <div class="splash-content">
+                <div class="splash-logo">
+                    <span class="material-symbols-rounded">account_balance_wallet</span>
+                </div>
+                <div class="splash-loader">
+                    <div class="loader-dot"></div>
+                    <div class="loader-dot"></div>
+                    <div class="loader-dot"></div>
+                </div>
+            </div>
+        </div>
         
         <!-- Auth View -->
-        <div id="authView" class="view active" style="min-height: 100vh; background: #fff; display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div id="authView" class="view hidden" style="min-height: 100vh; background: #fff; display: flex; align-items: center; justify-content: center; z-index: 9999;">
             <div class="auth-card" style="width: 100%; max-width: 400px; padding: 40px 24px;">
                 <div style="text-align: center; margin-bottom: 40px;">
                     <div style="width: 60px; height: 60px; background: #000; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
@@ -24,17 +37,32 @@
                 </div>
                 
                 <form id="authForm" onsubmit="handleAuthSubmit(event)">
+                    <div id="nameFieldGroup" class="form-group" style="margin-bottom: 20px; display: none;">
+                        <label style="display: block; font-size: 13px; font-weight: 700; color: #94a3b8; margin-bottom: 8px;">Full Name</label>
+                        <input type="text" id="authName" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; background: #f8fafc; outline: none; font-weight: 600;" placeholder="Enter your name">
+                    </div>
                     <div class="form-group" style="margin-bottom: 20px;">
                         <label style="display: block; font-size: 13px; font-weight: 700; color: #94a3b8; margin-bottom: 8px;">Email</label>
-                        <input type="email" id="authEmail" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; background: #f8fafc; outline: none; font-weight: 600;" required>
+                        <input type="email" id="authEmail" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; background: #f8fafc; outline: none; font-weight: 600;" required placeholder="Enter your email">
                     </div>
                     <div class="form-group" style="margin-bottom: 30px;">
                         <label style="display: block; font-size: 13px; font-weight: 700; color: #94a3b8; margin-bottom: 8px;">Password</label>
-                        <input type="password" id="authPassword" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; background: #f8fafc; outline: none; font-weight: 600;" required>
+                        <input type="password" id="authPassword" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; background: #f8fafc; outline: none; font-weight: 600;" required placeholder="••••••••">
                     </div>
                     
-                    <button type="submit" id="authSubmitBtn" class="btn-add-cat" style="width: 100%; padding: 18px; font-size: 16px;">Sign In</button>
+                    <button type="submit" id="authSubmitBtn" class="btn-add-cat" style="width: 100%; padding: 18px; font-size: 16px; margin-bottom: 20px;">Sign In</button>
                     
+                    <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                        <div style="flex: 1; height: 1px; background: #f1f5f9;"></div>
+                        <span style="padding: 0 15px; color: #94a3b8; font-size: 12px; font-weight: 600;">OR</span>
+                        <div style="flex: 1; height: 1px; background: #f1f5f9;"></div>
+                    </div>
+
+                    <button type="button" onclick="handleGoogleSignIn()" class="btn-google-auth" style="width: 100%; padding: 16px; border-radius: 16px; border: 1px solid #f1f5f9; background: #fff; display: flex; align-items: center; justify-content: center; gap: 12px; font-weight: 700; color: #000; cursor: pointer; transition: all 0.3s ease;">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" width="20" alt="Google">
+                        Sign in with Google
+                    </button>
+
                     <div style="text-align: center; margin-top: 24px;">
                         <p style="color: #64748b; font-size: 14px; font-weight: 500;">
                             <span id="authToggleText">Don't have an account?</span> 
@@ -78,10 +106,10 @@
         <div id="homeView" class="view hidden">
             <header class="header">
                 <div class="user-info-header">
-                    <img src="https://ui-avatars.com/api/?name=John+Jacob&background=1c1c1e&color=fff" class="header-avatar" alt="User Avatar">
+                    <img src="https://ui-avatars.com/api/?name=User&background=1c1c1e&color=fff" class="header-avatar" id="headerAvatar" alt="User Avatar">
                     <div class="greeting-text">
                         <span class="welcome-back">Welcome back,</span>
-                        <h2 class="user-name">John Jacob</h2>
+                        <h2 class="user-name" id="headerUserName">...</h2>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -100,8 +128,8 @@
                     USD
                 </div>
                 <h2 class="balance-amount" id="totalBalance">$0.00</h2>
-                <div class="percentage-pill positive">
-                    <span class="material-symbols-rounded">trending_up</span> +2.10%
+                <div class="percentage-pill positive" id="balanceTrend" style="display:none;">
+                    <span class="material-symbols-rounded">trending_up</span> 0%
                 </div>
                 
                 <div class="actions-pill">
@@ -161,7 +189,7 @@
         <!-- Analysis View -->
         <div id="analysisView" class="view hidden">
             <header class="header">
-                <img src="https://ui-avatars.com/api/?name=John+Jacob&background=1c1c1e&color=fff" class="header-avatar" alt="User Avatar">
+                <img src="https://ui-avatars.com/api/?name=User&background=1c1c1e&color=fff" class="header-avatar" id="analysisAvatar" alt="User Avatar">
                 <div class="header-actions">
                     <button class="header-icon-btn"><span class="material-symbols-rounded">search</span></button>
                     <button class="header-icon-btn"><span class="material-symbols-rounded">notifications</span></button>
@@ -178,14 +206,14 @@
             <!-- Sub Screen: Analysis -->
             <div id="subAnalysis" class="sub-view active">
                 <div class="analysis-filter-row">
-                    <button class="filter-chip">Week</button>
-                    <button class="filter-chip active">Month</button>
-                    <button class="filter-chip">Year</button>
-                    <button class="filter-chip">All</button>
+                    <button class="filter-chip" id="filterChipWeek" onclick="switchAnalysisFilter('week', this)">Week</button>
+                    <button class="filter-chip active" id="filterChipMonth" onclick="switchAnalysisFilter('month', this)">Month</button>
+                    <button class="filter-chip" id="filterChipYear" onclick="switchAnalysisFilter('year', this)">Year</button>
+                    <button class="filter-chip" id="filterChipAll" onclick="switchAnalysisFilter('all', this)">All</button>
                 </div>
 
                 <div class="analysis-hero">
-                    <p class="hero-label">Total Balance this Month</p>
+                    <p class="hero-label" id="analysisHeroLabel">Total Balance this Month</p>
                     <div class="hero-amount-row">
                         <h1 id="analysisTotalSpent">$0.00</h1>
                         <span class="trend-up"><span class="material-symbols-rounded">north_east</span> 8.4%</span>
@@ -224,18 +252,18 @@
             <!-- Sub Screen: Budget -->
             <div id="subBudget" class="sub-view hidden">
                 <div class="budget-main-card">
-                    <div class="budget-card-header">
-                        <h4>Monthly Budget</h4>
-                        <button class="text-btn" onclick="openModal('budgetModal')">Edit Limit</button>
-                    </div>
+                        <div class="budget-card-header">
+                            <h4>Monthly Budget</h4>
+                            <button class="text-btn" onclick="openBudgetModal()">Edit Limit</button>
+                        </div>
                     <div class="budget-stats">
-                        <span class="spent-text">$0 of $5,000</span>
+                        <span class="spent-text">$0 of $0</span>
                         <span class="percent-text">0%</span>
                     </div>
                     <div class="progress-bar-container">
                         <div class="progress-bar-fill" style="width: 0%"></div>
                     </div>
-                    <p class="remaining-text">Remaining: <span>$5,000</span></p>
+                    <p class="remaining-text">Remaining: <span>$0</span></p>
                 </div>
 
                 <div class="categories-header-row">
@@ -254,7 +282,7 @@
                 <div class="savings-main-card">
                     <div class="savings-card-header">
                         <h4>Savings Goal</h4>
-                        <button class="goal-edit-pill" onclick="openModal('savingsGoalModal')">Edit Goal</button>
+                        <button class="goal-edit-pill" onclick="openSavingsGoalModal()">Edit Goal</button>
                     </div>
                     <h2 class="savings-amount-big">$0</h2>
                     <div class="savings-progress-track">
@@ -481,6 +509,183 @@
             </div>
         </div>
 
+        <!-- Accounts View -->
+        <div id="accountsView" class="view hidden">
+            <header class="header">
+                <div class="greeting-container">
+                    <h1 class="greeting">Financial Accounts</h1>
+                </div>
+                <button class="add-btn-black" onclick="openModal('addAccountModal')">
+                    <span class="material-symbols-rounded">add</span> Add Account
+                </button>
+            </header>
+            <div class="accounts-summary-pill" style="margin: 0 20px 20px; background: #000; color: #fff; padding: 24px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <p style="font-size: 12px; font-weight: 600; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px;">Net Worth</p>
+                <h2 id="netWorthDisplay" style="font-size: 32px; font-weight: 800; margin: 4px 0;">$0.00</h2>
+            </div>
+            <div class="accounts-grid" id="accountsList" style="padding: 0 20px;">
+                <!-- Account cards populated by JS -->
+            </div>
+        </div>
+
+        <!-- Loans View -->
+        <div id="loansView" class="view hidden">
+            <header class="header">
+                <div class="greeting-container">
+                    <h1 class="greeting">Active Loans</h1>
+                </div>
+                <button class="add-btn-black" onclick="openModal('addLoanModal')">
+                    <span class="material-symbols-rounded">add</span> Add Loan
+                </button>
+            </header>
+            <div id="loansList" style="padding: 0 20px;">
+                <!-- Loan items populated by JS -->
+            </div>
+        </div>
+
+        <!-- Investments View -->
+        <div id="investmentsView" class="view hidden">
+            <header class="header">
+                <div class="greeting-container">
+                    <h1 class="greeting">Investment Portfolio</h1>
+                </div>
+                <button class="add-btn-black" onclick="openModal('addInvestmentModal')">
+                    <span class="material-symbols-rounded">add</span> Add Holding
+                </button>
+            </header>
+            <div class="portfolio-hero" style="margin: 0 20px 20px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; padding: 24px; border-radius: 24px;">
+                <p style="font-size: 12px; font-weight: 600; opacity: 0.9;">Total Portfolio Value</p>
+                <h2 id="portfolioTotal" style="font-size: 32px; font-weight: 800; margin: 4px 0;">$0.00</h2>
+                <div class="portfolio-pnl" id="portfolioPnL">
+                    <span class="material-symbols-rounded">trending_up</span> 0% Overall
+                </div>
+            </div>
+            <div id="investmentsList" style="padding: 0 20px;">
+                <!-- Investment items populated by JS -->
+            </div>
+        </div>
+
+        <!-- Add Account Modal -->
+        <div class="modal-overlay" id="addAccountModal">
+            <div class="modal centered-card-modal">
+                <div class="modal-header-exact">
+                    <h3>Add Account</h3>
+                    <button class="close-btn-simple" onclick="closeModal('addAccountModal')">×</button>
+                </div>
+                <form id="accountForm" class="form-standard">
+                    <div class="form-group">
+                        <label>Account Name</label>
+                        <input type="text" id="accountName" placeholder="e.g. HDFC Bank, My Wallet" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Account Type</label>
+                        <select id="accountType" class="settings-select">
+                            <option value="bank">Bank Account</option>
+                            <option value="wallet">Digital Wallet</option>
+                            <option value="cash">Cash / Physical</option>
+                            <option value="credit">Credit Card</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Initial Balance</label>
+                        <input type="number" id="accountBalance" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <button type="submit" class="btn-add-cat" style="width: 100%; margin-top: 20px;">Create Account</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Account Modal -->
+        <div class="modal-overlay" id="editAccountModal">
+            <div class="modal centered-card-modal">
+                <div class="modal-header-exact">
+                    <h3>Edit Account</h3>
+                    <button class="close-btn-simple" onclick="closeModal('editAccountModal')">×</button>
+                </div>
+                <form id="editAccountForm" class="form-standard" onsubmit="submitEditAccount(event)">
+                    <input type="hidden" id="editAccountId">
+                    <div class="form-group">
+                        <label>Account Name</label>
+                        <input type="text" id="editAccountName" placeholder="e.g. HDFC Bank, My Wallet" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Account Type</label>
+                        <select id="editAccountType" class="settings-select">
+                            <option value="bank">Bank Account</option>
+                            <option value="wallet">Digital Wallet</option>
+                            <option value="cash">Cash / Physical</option>
+                            <option value="credit">Credit Card</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Current Balance</label>
+                        <input type="number" id="editAccountBalance" placeholder="0.00" step="0.01" required>
+                    </div>
+                    <button type="submit" class="btn-add-cat" style="width: 100%; margin-top: 20px;">Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Loan Modal -->
+        <div class="modal-overlay" id="addLoanModal">
+            <div class="modal centered-card-modal">
+                <div class="modal-header-exact">
+                    <h3>Add Loan</h3>
+                    <button class="close-btn-simple" onclick="closeModal('addLoanModal')">×</button>
+                </div>
+                <form id="loanForm" class="form-standard">
+                    <div class="form-group">
+                        <label>Loan Direction</label>
+                        <select id="loanDirection" class="settings-select" required>
+                            <option value="borrowed">Borrowed (I owe money)</option>
+                            <option value="lent">Lent (Someone owes me)</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Loan Name</label><input type="text" id="loanName" placeholder="e.g. Car Loan, John's Debt" required></div>
+                    <div class="form-group"><label>Lender / Borrower</label><input type="text" id="loanLender" placeholder="e.g. SBI Bank, John Doe" required></div>
+                    <div class="form-group"><label>Loan Amount</label><input type="number" id="loanAmount" placeholder="0.00" step="0.01" required></div>
+                    <div class="form-group" style="display: flex; gap: 10px;">
+                        <div style="flex: 1;"><label>Interest Rate (%)</label><input type="number" id="loanRate" placeholder="e.g. 5.5" step="0.01" required></div>
+                        <div style="flex: 1;"><label>Due Date</label><input type="date" id="loanDueDate" required></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Account</label>
+                        <select id="loanAccount" class="settings-select" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes (Optional)</label>
+                        <textarea id="loanNotes" placeholder="Additional details..." rows="2" style="width: 100%; border-radius: 12px; border: 1px solid #e2e8f0; padding: 10px; font-family: inherit; font-size: 13px; outline: none;"></textarea>
+                    </div>
+                    <button type="submit" class="btn-add-cat" style="width: 100%; margin-top: 15px;">Save Loan</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Investment Modal -->
+        <div class="modal-overlay" id="addInvestmentModal">
+            <div class="modal centered-card-modal">
+                <div class="modal-header-exact">
+                    <h3>Add Holding</h3>
+                    <button class="close-btn-simple" onclick="closeModal('addInvestmentModal')">×</button>
+                </div>
+                <form id="investmentForm" class="form-standard">
+                    <div class="form-group"><label>Asset Name</label><input type="text" id="invAssetName" placeholder="e.g. TCS, BTC" required></div>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="invType" class="settings-select">
+                            <option value="stock">Stock</option>
+                            <option value="crypto">Crypto</option>
+                            <option value="mf">Mutual Fund</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Quantity</label><input type="number" id="invQty" step="0.0001" required></div>
+                    <div class="form-group"><label>Buy Price</label><input type="number" id="invBuyPrice" step="0.01" required></div>
+                    <div class="form-group"><label>Current Price</label><input type="number" id="invCurrentPrice" step="0.01" required></div>
+                    <button type="submit" class="btn-add-cat" style="width: 100%; margin-top: 20px;">Add to Portfolio</button>
+                </form>
+            </div>
+        </div>
+
         <!-- Manage Account Modal -->
         <div class="modal-overlay" id="manageAccountModal">
             <div class="modal centered-card-modal">
@@ -491,19 +696,19 @@
                 <div class="account-details-list">
                     <div class="account-detail-item">
                         <label>Full Name</label>
-                        <input type="text" id="accName" value="John Jacob">
+                        <input type="text" id="accName" value="">
                     </div>
                     <div class="account-detail-item">
                         <label>Email Address</label>
-                        <input type="email" id="accEmail" value="john.jacob@example.com">
+                        <input type="email" id="accEmail" value="" readonly>
                     </div>
                     <div class="account-detail-item">
                         <label>Username</label>
-                        <input type="text" id="accUser" value="john_jacob24">
+                        <input type="text" id="accUser" value="">
                     </div>
                     <div class="account-detail-item">
                         <label>User ID</label>
-                        <input type="text" value="EXP-8892-JJ" readonly style="background: #f8fafc; color: #94a3b8;">
+                        <input type="text" id="accIdDisplay" value="..." readonly style="background: #f8fafc; color: #94a3b8;">
                     </div>
                 </div>
                 <button class="btn-add-cat" style="width: 100%; margin-top: 20px;" onclick="saveAccountDetails()">Save Changes</button>
@@ -573,8 +778,8 @@
                     <div class="form-group-exact">
                         <label>Type</label>
                         <div class="type-buttons-exact">
-                            <button type="button" class="type-btn-exact expense active" data-type="expense">Expense</button>
-                            <button type="button" class="type-btn-exact income" data-type="income">Income</button>
+                            <button type="button" class="type-btn-exact expense active" data-type="expense" onclick="switchTxType('expense')">Expense</button>
+                            <button type="button" class="type-btn-exact income" data-type="income" onclick="switchTxType('income')">Income</button>
                         </div>
                     </div>
 
@@ -591,23 +796,57 @@
                     <div class="form-group-exact">
                         <label>Category</label>
                         <div class="select-wrapper-exact">
-                            <select id="txCategory" name="category" required>
-                                <option value="Food">Food & Dining</option>
-                                <option value="Shopping">Shopping</option>
-                                <option value="Transport">Transport</option>
-                                <option value="Bills">Bills & Utilities</option>
-                                <option value="Entertainment">Entertainment</option>
-                                <option value="Salary">Salary (Income)</option>
-                                <option value="Other">Other</option>
+                            <select id="txCategoryExpense" required>
+                                <option value="Food">🍽️ Food &amp; Dining</option>
+                                <option value="Groceries">🛒 Groceries</option>
+                                <option value="Transport">🚗 Transport</option>
+                                <option value="Travel">✈️ Travel</option>
+                                <option value="Shopping">🛍️ Shopping</option>
+                                <option value="Outing">🎉 Outing &amp; Fun</option>
+                                <option value="Entertainment">🎬 Entertainment</option>
+                                <option value="Health">💊 Health &amp; Medical</option>
+                                <option value="Bills">💡 Bills &amp; Utilities</option>
+                                <option value="Education">📚 Education</option>
+                                <option value="Rent">🏠 Rent &amp; Housing</option>
+                                <option value="Subscriptions">📱 Subscriptions</option>
+                                <option value="Fitness">🏋️ Fitness &amp; Sports</option>
+                                <option value="Gifts">🎁 Gifts &amp; Donations</option>
+                                <option value="Personal">🧴 Personal Care</option>
+                                <option value="Other">📦 Other</option>
+                            </select>
+                            <select id="txCategoryIncome" style="display:none;">
+                                <option value="Salary">💼 Salary</option>
+                                <option value="Freelance">💻 Freelance</option>
+                                <option value="Business">🏢 Business</option>
+                                <option value="Investment">📈 Investment Returns</option>
+                                <option value="Bonus">🎯 Bonus</option>
+                                <option value="Gift">🎀 Gift Received</option>
+                                <option value="Account Opening">🏦 Account Opening</option>
+                                <option value="Income">💵 Other Income</option>
                             </select>
                             <span class="material-symbols-rounded expand-icon">unfold_more</span>
                         </div>
                     </div>
 
                     <div class="form-group-exact">
+                        <label>Account</label>
+                        <div class="select-wrapper-exact">
+                            <select id="txAccount" name="account" required>
+                                <option value="cash">Main Wallet (Cash)</option>
+                                <!-- Accounts populated by JS -->
+                            </select>
+                            <span class="material-symbols-rounded expand-icon">unfold_more</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group-exact" style="margin-top: 10px;">
+                        <label style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Smart Paste (SMS)</label>
+                        <textarea id="txSmsPaste" placeholder="Paste bank SMS to auto-fill..." style="width: 100%; height: 60px; border-radius: 16px; border: 1px dashed #cbd5e1; padding: 12px; font-size: 13px; font-family: inherit; margin-top: 8px; outline: none; background: #f8fafc; color: #1e293b;" oninput="parseSms(this.value)"></textarea>
+                    </div>
+
+                    <div class="form-group-exact">
                         <label>Date</label>
-                        <input type="text" id="txDateDisplay" value="3 Feb 2026" readonly>
-                        <input type="hidden" id="txDate" name="date" value="2026-02-03 12:00:00">
+                        <input type="date" id="txDateDisplay" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; font-size: 14px; font-family: inherit; outline: none; background: #f8fafc; color: #1e293b;">
                     </div>
 
                     <div class="modal-footer-exact">
@@ -615,6 +854,21 @@
                         <button type="submit" class="footer-btn submit" id="submitBtn">Add Transaction</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Universal Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteConfirmModal">
+        <div class="modal centered-card-modal" style="max-width: 340px; text-align: center; padding: 32px 24px;">
+            <div style="width: 68px; height: 68px; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px;">
+                <span class="material-symbols-rounded" style="font-size: 34px; color: #ef4444;">delete_forever</span>
+            </div>
+            <h3 id="deleteConfirmTitle" style="font-size: 20px; font-weight: 800; color: #1e293b; margin-bottom: 8px;">Delete?</h3>
+            <p id="deleteConfirmMsg" style="font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 28px;">This action cannot be undone.</p>
+            <div style="display: flex; gap: 12px;">
+                <button onclick="closeModal('deleteConfirmModal')" style="flex: 1; padding: 14px; border-radius: 14px; border: 1.5px solid #e2e8f0; background: white; font-weight: 700; font-size: 14px; cursor: pointer; color: #64748b; font-family: inherit;">Cancel</button>
+                <button onclick="handleConfirmDelete()" id="deleteConfirmBtn" style="flex: 1; padding: 14px; border-radius: 14px; border: none; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; font-weight: 700; font-size: 14px; cursor: pointer; font-family: inherit; box-shadow: 0 4px 14px rgba(239,68,68,0.3);">Delete</button>
             </div>
         </div>
     </div>
@@ -867,6 +1121,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js', v=10) }}"></script>
 </body>
 </html>

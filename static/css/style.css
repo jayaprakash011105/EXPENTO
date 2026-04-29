@@ -168,6 +168,7 @@ body {
     width: calc(100% - 48px); max-width: 400px; background: white; 
     border-radius: 32px; padding: 32px; position: relative;
     box-shadow: 0 20px 80px rgba(0,0,0,0.2); animation: cardIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    max-height: 90vh; overflow-y: auto;
 }
 @keyframes cardIn { from { opacity: 0; transform: scale(0.8) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
@@ -620,3 +621,314 @@ body.dark-theme .settings-select { background: #2c2c2e; }
 body.dark-theme .item-icon-box.dark { background: #2c2c2e; color: #fff; }
 body.dark-theme .btn-logout-settings { background: #1c1c1e; border-color: #2c2c2e; }
 body.dark-theme .account-detail-item input { background: #2c2c2e; border-color: #333; color: #fff; }
+
+/* Splash Screen */
+.splash-screen {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.splash-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+
+.splash-logo {
+    width: 80px;
+    height: 80px;
+    background: #000;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.splash-logo span {
+    color: #fff;
+    font-size: 40px;
+}
+
+.splash-loader {
+    display: flex;
+    gap: 8px;
+}
+
+.loader-dot {
+    width: 10px;
+    height: 10px;
+    background: #000;
+    border-radius: 50%;
+    animation: bounce 0.6s infinite alternate;
+}
+
+.loader-dot:nth-child(2) { animation-delay: 0.2s; }
+.loader-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+    from { transform: translateY(0); opacity: 0.3; }
+    to { transform: translateY(-10px); opacity: 1; }
+}
+
+body.dark-theme .splash-screen {
+    background: #000;
+}
+body.dark-theme .loader-dot {
+    background: #fff;
+}
+
+/* Premium Screen Styles */
+.accounts-summary-pill {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.accounts-summary-pill:hover {
+    transform: translateY(-5px);
+}
+
+.portfolio-hero {
+    box-shadow: 0 15px 35px rgba(59, 130, 246, 0.2);
+    transition: all 0.3s ease;
+}
+
+.portfolio-hero:hover {
+    transform: scale(1.02);
+}
+
+.portfolio-pnl {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.smart-paste-area textarea {
+    transition: all 0.2s ease;
+}
+
+.smart-paste-area textarea:focus {
+    border-color: var(--primary-color) !important;
+    background: #fff !important;
+    border-style: solid !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* Animations for new views */
+.view.active {
+    animation: slideUpFade 0.4s ease forwards;
+}
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Interactive & Modern UI Components */
+.empty-state-modern {
+    text-align: center;
+    padding: 60px 20px;
+    background: #f8fafc;
+    border-radius: 32px;
+    border: 2px dashed #e2e8f0;
+    margin: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.interactive-card {
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.interactive-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+    border-color: rgba(59, 130, 246, 0.1);
+}
+
+.pill-btn-status {
+    padding: 6px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pill-btn-status.paid {
+    background: #ecfdf5;
+    color: #10b981;
+}
+
+.pill-btn-status.unpaid {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.pill-btn-status:hover {
+    filter: brightness(0.95);
+    transform: scale(1.05);
+}
+
+.pill-btn-gray {
+    background: #f1f5f9;
+    color: #475569;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pill-btn-gray:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+/* Dark Theme Support */
+body.dark-theme .empty-state-modern {
+    background: #111;
+    border-color: #222;
+}
+
+body.dark-theme .empty-state-modern h4 {
+    color: #fff !important;
+}
+
+body.dark-theme .pill-btn-gray {
+    background: #222;
+    color: #94a3b8;
+}
+
+/* Edit / Delete action buttons on cards */
+.icon-action-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 15px;
+}
+
+.icon-action-btn.edit {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.icon-action-btn.edit:hover {
+    background: #3b82f6;
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.icon-action-btn.delete {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.icon-action-btn.delete:hover {
+    background: #ef4444;
+    color: #fff;
+    transform: scale(1.1);
+}
+/* ── Compact Transaction Items ───────────────────────────────────────────── */
+.tx-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    margin-bottom: 4px;
+}
+.tx-item:hover { background: #f8fafc; }
+
+.tx-icon-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.tx-details { flex: 1; min-width: 0; }
+.tx-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+.tx-subtitle {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+    margin: 1px 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tx-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.tx-amount {
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.tx-actions {
+    display: flex;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.tx-item:hover .tx-actions { opacity: 1; }
+
+.action-icon-pill {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s;
+}
+.action-icon-pill.edit { background: #eff6ff; color: #3b82f6; }
+.action-icon-pill.edit:hover { background: #3b82f6; color: #fff; }
+.action-icon-pill.delete { background: #fef2f2; color: #ef4444; }
+.action-icon-pill.delete:hover { background: #ef4444; color: #fff; }
