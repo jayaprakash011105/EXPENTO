@@ -6,7 +6,7 @@
     <title>Expento - Premium Finance Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=2) }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=36) }}">
     <meta name="theme-color" content="#f2f4f7">
 </head>
 <body>
@@ -114,8 +114,8 @@
                 </div>
                 <div class="header-actions">
                     <div class="notification-wrapper">
-                        <button class="header-icon-btn"><span class="material-symbols-rounded">notifications</span></button>
-                        <span class="notification-dot"></span>
+                        <button class="header-icon-btn" onclick="toggleNotifications()"><span class="material-symbols-rounded">notifications</span></button>
+                        <span class="notification-dot" id="notifDot" style="display:none;"></span>
                     </div>
                     <button class="header-icon-btn" onclick="switchTab('settings')"><span class="material-symbols-rounded">settings</span></button>
                 </div>
@@ -134,7 +134,7 @@
                 
                 <div class="actions-pill">
                     <button class="action-btn-pill" onclick="openModal('addTransactionModal', 'expense')">
-                        <span>Send</span>
+                        <span>Expense</span>
                         <span class="material-symbols-rounded icon-sm">arrow_upward</span>
                     </button>
                     <button class="action-btn-center" onclick="openModal('addTransactionModal', 'upi')">
@@ -142,7 +142,7 @@
                     </button>
                     <button class="action-btn-pill" onclick="openModal('addTransactionModal', 'income')">
                         <span class="material-symbols-rounded icon-sm">arrow_downward</span>
-                        <span>Request</span>
+                        <span>Income</span>
                     </button>
                 </div>
             </section>
@@ -208,43 +208,86 @@
                 <div class="analysis-filter-row">
                     <button class="filter-chip" id="filterChipWeek" onclick="switchAnalysisFilter('week', this)">Week</button>
                     <button class="filter-chip active" id="filterChipMonth" onclick="switchAnalysisFilter('month', this)">Month</button>
-                    <button class="filter-chip" id="filterChipYear" onclick="switchAnalysisFilter('year', this)">Year</button>
                     <button class="filter-chip" id="filterChipAll" onclick="switchAnalysisFilter('all', this)">All</button>
                 </div>
 
-                <div class="analysis-hero">
-                    <p class="hero-label" id="analysisHeroLabel">Total Balance this Month</p>
-                    <div class="hero-amount-row">
-                        <h1 id="analysisTotalSpent">$0.00</h1>
-                        <span class="trend-up"><span class="material-symbols-rounded">north_east</span> 8.4%</span>
+                <!-- Master Status Card -->
+                <div class="master-insights-grid">
+                    <div class="insight-card-main">
+                        <div class="insight-header">
+                            <span class="material-symbols-rounded icon-purple">analytics</span>
+                            <span class="insight-label">Master Status</span>
+                        </div>
+                        <h2 id="analysisTotalSpent">$0.00</h2>
+                        <div class="insight-footer">
+                            <span class="trend-up" id="analysisTrendText"><span class="material-symbols-rounded">north_east</span> 8.4%</span>
+                            <span class="footer-label" id="analysisHeroLabel">Total Balance this Month</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="analysis-grid">
-                    <div class="mini-card income">
-                        <p>Income</p>
-                        <h3 id="analysisIncome">$0.00</h3>
+                <!-- Income & Expense Grid (Moved UP) -->
+                <div class="analysis-grid-v3">
+                    <div class="stat-card-v3 income">
+                        <div class="card-icon"><span class="material-symbols-rounded">south_east</span></div>
+                        <div class="card-info">
+                            <p>Income</p>
+                            <h3 id="analysisIncome">$0.00</h3>
+                        </div>
                     </div>
-                    <div class="mini-card budget">
-                        <p>Expense</p>
-                        <h3 id="analysisBudgetTotal">$0.00</h3>
-                    </div>
-                </div>
-
-                <div class="chart-card-full">
-                    <div class="chart-header">
-                        <h4>Daily Spending</h4>
-                        <div class="chart-legend"><span class="dot-blue"></span> Current</div>
-                    </div>
-                    <div class="chart-container-large" id="analysisChart">
-                        <!-- Bar chart populated by JS -->
+                    <div class="stat-card-v3 expense">
+                        <div class="card-icon"><span class="material-symbols-rounded">north_east</span></div>
+                        <div class="card-info">
+                            <p>Expense</p>
+                            <h3 id="analysisBudgetTotal">$0.00</h3>
+                        </div>
                     </div>
                 </div>
 
-                <div class="breakdown-section">
-                    <h4>Breakdown</h4>
-                    <div class="breakdown-list" id="categoryBreakdownList">
-                        <!-- Breakdown items -->
+                <!-- Mini Insights Row (Moved DOWN and Small) -->
+                <div class="insights-row-compact">
+                    <div class="mini-card-static">
+                        <span class="label">Daily Avg</span>
+                        <h4 id="insightDailyAvg">$0.00</h4>
+                    </div>
+                    <div class="mini-card-static">
+                        <span class="label">Savings Rate</span>
+                        <h4 id="insightSavingsRate">0%</h4>
+                    </div>
+                    <div class="mini-card-static">
+                        <span class="label">Top Category</span>
+                        <h4 id="insightTopCategory">None</h4>
+                    </div>
+                </div>
+
+                <!-- Spending Pulse Graph Section -->
+                <div class="chart-card-premium-v2">
+                    <div class="chart-header-premium">
+                        <div class="header-main">
+                            <h4>Spending Pulse</h4>
+                            <div class="pulse-dot"></div>
+                        </div>
+                        <p id="chartSubLabel">Weekly activity for current month</p>
+                    </div>
+                    <div class="chart-wrapper-new">
+                        <div class="chart-y-axis">
+                            <span>Max</span>
+                            <span>Mid</span>
+                            <span>0</span>
+                        </div>
+                        <div class="chart-container-master-v2" id="analysisChart">
+                            <!-- Bar chart populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pulse-section">
+                    <div class="section-header-v2">
+                        <h4>Category Pulse</h4>
+                        <button class="view-all-btn">View All</button>
+                    </div>
+                    <div class="category-pulse-grid" id="categoryBreakdownList">
+                        <!-- Breakdown items as interactive cards -->
                     </div>
                 </div>
             </div>
@@ -316,8 +359,14 @@
 
         <!-- Transactions View -->
         <div id="transactionsView" class="view hidden">
+            <div class="pull-refresh-container">
+                <div class="refresh-circle-outer">
+                    <div class="refresh-circle-progress"></div>
+                    <span class="material-symbols-rounded refresh-icon">expand_more</span>
+                </div>
+            </div>
             <header class="header">
-                <img src="https://ui-avatars.com/api/?name=John+Jacob&background=1c1c1e&color=fff" class="header-avatar" alt="User Avatar">
+                <img src="https://ui-avatars.com/api/?name=User&background=1c1c1e&color=fff" class="header-avatar" id="transactionsAvatar" alt="User Avatar">
                 <div class="header-actions">
                     <button class="header-icon-btn"><span class="material-symbols-rounded">search</span></button>
                     <button class="header-icon-btn"><span class="material-symbols-rounded">notifications</span></button>
@@ -382,130 +431,247 @@
 
         <!-- Add Bill Modal -->
         <div class="modal-overlay" id="addBillModal">
-            <div class="modal centered-card-modal">
-                <div class="modal-header-exact">
+            <div class="modal simple-account-card animate-pop-in">
+                <button class="close-btn-simple" onclick="closeModal('addBillModal')">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+                <div class="simple-card-header">
+                    <div class="modal-icon-circle icon-blue">
+                        <span class="material-symbols-rounded">receipt_long</span>
+                    </div>
                     <h3>Add New Bill</h3>
-                    <button class="close-btn-simple" onclick="closeModal('addBillModal')"><span class="material-symbols-rounded">close</span></button>
                 </div>
-                <form id="billForm" class="form-standard" onsubmit="handleBillSubmit(event)">
-                    <div class="form-group">
+                <form id="billForm" class="simple-card-body" onsubmit="handleBillSubmit(event)">
+                    <div class="simple-input-group">
                         <label>Bill Name</label>
                         <input type="text" id="billName" placeholder="e.g. Electricity, Netflix" required>
                     </div>
-                    <div class="form-group">
+                    <div class="simple-input-group">
                         <label>Amount</label>
                         <input type="number" id="billAmount" placeholder="0.00" step="0.01" required>
                     </div>
-                    <div class="form-group">
+                    <div class="simple-input-group">
                         <label>Due Date</label>
                         <input type="date" id="billDate" required>
                     </div>
-                    <button type="submit" class="btn-add-cat" style="width: 100%; margin-top: 20px;">Add Bill</button>
+                    
+                    <div class="modal-footer-btns">
+                        <button type="button" class="btn-modal-secondary" onclick="closeModal('addBillModal')">Cancel</button>
+                        <button type="submit" class="btn-modal-primary">Add Bill</button>
+                    </div>
                 </form>
             </div>
         </div>
 
         <!-- Settings View -->
+        <!-- Settings View -->
         <div id="settingsView" class="view hidden">
-            <header class="header">
-                <div class="greeting-container">
-                    <h1 class="greeting" style="font-size: 24px; color: var(--text-dark);">Settings</h1>
+            <!-- Header Section -->
+            <header class="settings-header-modern animate-fade-in-up" style="animation-delay: 0.1s;">
+                <div class="header-text-container">
+                    <h1 class="settings-title">Settings</h1>
+                    <p class="settings-subtitle">Manage your financial preferences</p>
+                </div>
+                <div class="header-avatar-box shadow-soft">
+                    <span class="material-symbols-rounded">person</span>
                 </div>
             </header>
-            
-            <div class="settings-container">
-                <!-- Account Section -->
-                <div class="settings-section">
-                    <h3>Account</h3>
-                    <div class="settings-card" onclick="openModal('manageAccountModal')">
-                        <div class="settings-item">
-                            <div class="item-left">
-                                <div class="item-icon-box blue"><span class="material-symbols-rounded">person</span></div>
-                                <div class="item-text">
-                                    <h4>Manage Account</h4>
-                                    <p>Username, Email, Personal Info</p>
+
+            <div class="settings-container-modern">
+                <!-- Profile Card -->
+                <div class="settings-profile-card shadow-soft floating-card animate-fade-in-up" style="animation-delay: 0.2s;" onclick="openModal('manageAccountModal')">
+                    <div class="profile-card-left">
+                        <div class="profile-avatar-circle">
+                            <span class="material-symbols-rounded">person</span>
+                        </div>
+                        <div class="profile-info-text">
+                            <h2 class="profile-name" id="settingsUserName">John Doe</h2>
+                            <p class="profile-email" id="settingsUserEmail">john.doe@gmail.com</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-rounded icon-arrow">chevron_right</span>
+                </div>
+
+                <!-- ACCOUNT Section -->
+                <div class="settings-section-modern animate-fade-in-up" style="animation-delay: 0.3s;">
+                    <h3 class="section-title-modern">ACCOUNT</h3>
+                    <div class="settings-card-modern floating-card shadow-soft">
+                        <div class="settings-item-modern no-border" onclick="openModal('manageAccountModal')">
+                            <div class="item-left-modern">
+                                <div class="item-icon-modern"><span class="material-symbols-rounded">person_outline</span></div>
+                                <div class="item-text-modern">
+                                    <h4 class="primary-text-modern">Manage Profile</h4>
+                                    <p class="secondary-text-modern">Name, Email, Personal Details</p>
                                 </div>
                             </div>
-                            <span class="material-symbols-rounded">chevron_right</span>
+                            <span class="material-symbols-rounded icon-arrow">chevron_right</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Preferences Section -->
-                <div class="settings-section">
-                    <h3>Preferences</h3>
-                    <div class="settings-card">
-                        <!-- Theme Toggle -->
-                        <div class="settings-item">
-                            <div class="item-left">
-                                <div class="item-icon-box dark"><span class="material-symbols-rounded">dark_mode</span></div>
-                                <div class="item-text">
-                                    <h4>Dark Theme</h4>
-                                    <p>Switch between light and dark mode</p>
+                <!-- PREFERENCES Section -->
+                <div class="settings-section-modern animate-fade-in-up" style="animation-delay: 0.4s;">
+                    <h3 class="section-title-modern">PREFERENCES</h3>
+                    <div class="settings-card-modern floating-card shadow-soft">
+                        <div class="settings-item-modern">
+                            <div class="item-left-modern">
+                                <div class="item-icon-modern"><span class="material-symbols-rounded">dark_mode</span></div>
+                                <div class="item-text-modern">
+                                    <h4 class="primary-text-modern">Dark Theme</h4>
+                                    <p class="secondary-text-modern">Switch between light and dark</p>
                                 </div>
                             </div>
-                            <label class="toggle-switch">
+                            <label class="toggle-switch-modern">
                                 <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
-                                <span class="slider"></span>
+                                <span class="slider-modern"></span>
                             </label>
                         </div>
                         
-                        <!-- Currency Selection -->
-                        <div class="settings-item">
-                            <div class="item-left">
-                                <div class="item-icon-box green"><span class="material-symbols-rounded">payments</span></div>
-                                <div class="item-text">
-                                    <h4>Currency</h4>
-                                    <p>Real-time conversion</p>
+                        <div class="settings-item-modern">
+                            <div class="item-left-modern">
+                                <div class="item-icon-modern"><span class="material-symbols-rounded">payments</span></div>
+                                <div class="item-text-modern">
+                                    <h4 class="primary-text-modern">Currency</h4>
+                                    <p class="secondary-text-modern">Select your preferred currency</p>
                                 </div>
                             </div>
-                            <select id="currencySelector" class="settings-select" onchange="handleCurrencyChange(this.value)">
-                                <option value="USD" selected>USD ($)</option>
-                                <option value="INR">INR (₹)</option>
-                                <option value="EUR">EUR (€)</option>
-                                <option value="GBP">GBP (£)</option>
-                                <option value="JPY">JPY (¥)</option>
-                                <option value="CAD">CAD ($)</option>
-                                <option value="AUD">AUD ($)</option>
-                            </select>
+                            <div class="currency-selector-modern-wrap">
+                                <select id="currencySelector" class="settings-select-modern" onchange="handleCurrencyChange(this.value)">
+                                    <option value="USD">USD ($)</option>
+                                    <option value="INR">INR (₹)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                    <option value="GBP">GBP (£)</option>
+                                    <option value="JPY">JPY (¥)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="settings-item-modern no-border" onclick="toggleNotifications()">
+                            <div class="item-left-modern">
+                                <div class="item-icon-modern"><span class="material-symbols-rounded">notifications</span></div>
+                                <div class="item-text-modern">
+                                    <h4 class="primary-text-modern">Notifications</h4>
+                                    <p class="secondary-text-modern">Manage your notification preferences</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-rounded icon-arrow">chevron_right</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- App Settings Section -->
-                <div class="settings-section">
-                    <h3>App Settings</h3>
-                    <div class="settings-card">
-                        <div class="settings-item">
-                            <div class="item-left">
-                                <div class="item-icon-box orange"><span class="material-symbols-rounded">notifications</span></div>
-                                <div class="item-text">
-                                    <h4>Notifications</h4>
-                                    <p>Alerts, Reminders, Reports</p>
+                <!-- SECURITY Section -->
+                <div class="settings-section-modern animate-fade-in-up" style="animation-delay: 0.5s;">
+                    <h3 class="section-title-modern">SECURITY</h3>
+                    <div class="settings-card-modern floating-card shadow-soft">
+                        <div class="settings-item-modern">
+                            <div class="item-left-modern">
+                                <div class="item-icon-modern"><span class="material-symbols-rounded">lock</span></div>
+                                <div class="item-text-modern">
+                                    <h4 class="primary-text-modern">App Lock</h4>
+                                    <p class="secondary-text-modern">Require authentication to open</p>
                                 </div>
                             </div>
-                            <label class="toggle-switch">
-                                <input type="checkbox" checked>
-                                <span class="slider"></span>
+                            <label class="toggle-switch-modern">
+                                <input type="checkbox" id="appLockToggle" onchange="toggleSecuritySetting('appLock', this.checked)">
+                                <span class="slider-modern"></span>
                             </label>
                         </div>
-                        <div class="settings-item">
-                            <div class="item-left">
-                                <div class="item-icon-box purple"><span class="material-symbols-rounded">security</span></div>
-                                <div class="item-text">
-                                    <h4>Security</h4>
-                                    <p>PIN, Fingerprint, 2FA</p>
+                        <div class="settings-item-modern" onclick="openModal('setPinModal')">
+                            <div class="item-left-modern">
+                                <div class="item-icon-modern"><span class="material-symbols-rounded">key</span></div>
+                                <div class="item-text-modern">
+                                    <h4 class="primary-text-modern">Change PIN</h4>
+                                    <p class="secondary-text-modern">Update your 4 or 6 digit PIN</p>
                                 </div>
                             </div>
-                            <span class="material-symbols-rounded">chevron_right</span>
+                            <span class="material-symbols-rounded icon-arrow">chevron_right</span>
+                        </div>
+                        <div class="settings-item-modern no-border" onclick="openModal('manageDevicesModal')">
+                            <div class="item-left-modern">
+                                <div class="item-icon-modern"><span class="material-symbols-rounded">devices</span></div>
+                                <div class="item-text-modern">
+                                    <h4 class="primary-text-modern">Manage Devices</h4>
+                                    <p class="secondary-text-modern">Check and manage logged-in devices</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-rounded icon-arrow">chevron_right</span>
                         </div>
                     </div>
                 </div>
 
-                <button class="btn-logout-settings" onclick="handleLogout()">
-                    <span class="material-symbols-rounded">logout</span>
-                    Log Out
-                </button>
+                <!-- FINANCE PREFERENCES Section -->
+                <div class="settings-section-modern animate-fade-in-up" style="animation-delay: 0.6s;">
+                    <h3 class="section-title-modern">FINANCE PREFERENCES</h3>
+                    <div class="finance-grid-modern shadow-soft floating-card">
+                        <div class="finance-grid-item">
+                            <div class="finance-icon"><span class="material-symbols-rounded">account_balance_wallet</span></div>
+                            <h4>Default Account</h4>
+                            <p>Main Wallet</p>
+                        </div>
+                        <div class="finance-grid-item">
+                            <div class="finance-icon"><span class="material-symbols-rounded">calendar_today</span></div>
+                            <h4>Budget Reset</h4>
+                            <p>1st of Every Month</p>
+                        </div>
+                        <div class="finance-grid-item">
+                            <div class="finance-icon"><span class="material-symbols-rounded">currency_exchange</span></div>
+                            <h4>Currency Auto Detect</h4>
+                            <p class="status-enabled">Enabled</p>
+                        </div>
+                        <div class="finance-grid-item">
+                            <div class="finance-icon"><span class="material-symbols-rounded">pie_chart</span></div>
+                            <h4>Spending Insights</h4>
+                            <p class="status-enabled">Personalized</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DATA & BACKUP Section -->
+                <div class="settings-section-modern animate-fade-in-up" style="animation-delay: 0.7s;">
+                    <h3 class="section-title-modern">DATA & BACKUP</h3>
+                    <div class="settings-card-modern floating-card shadow-soft">
+                        <div class="settings-item-modern">
+                            <div class="item-left-modern">
+                                <div class="item-icon-modern"><span class="material-symbols-rounded">cloud_upload</span></div>
+                                <div class="item-text-modern">
+                                    <h4 class="primary-text-modern">Cloud Sync</h4>
+                                    <p class="secondary-text-modern">Keep your data safe in cloud</p>
+                                </div>
+                            </div>
+                            <label class="toggle-switch-modern">
+                                <input type="checkbox" id="cloudSyncToggle" onchange="toggleCloudSync(this.checked)">
+                                <span class="slider-modern"></span>
+                            </label>
+                        </div>
+                        <div class="settings-item-modern">
+                            <div class="item-left-modern">
+                                <div class="item-icon-modern"><span class="material-symbols-rounded">history</span></div>
+                                <div class="item-text-modern">
+                                    <h4 class="primary-text-modern">Last Backup</h4>
+                                    <p class="secondary-text-modern" id="lastBackupTime">29 Apr 2026, 05:30 AM</p>
+                                </div>
+                            </div>
+                            <button class="btn-view-modern" onclick="exportToCSV()">View</button>
+                        </div>
+                        <div class="settings-item-modern no-border" onclick="showAlert('Coming Soon', 'Data restoration feature is under development.', 'cloud_download')">
+                            <div class="item-left-modern">
+                                <div class="item-icon-modern"><span class="material-symbols-rounded">download</span></div>
+                                <div class="item-text-modern">
+                                    <h4 class="primary-text-modern">Restore Data</h4>
+                                    <p class="secondary-text-modern">Restore your data from backup</p>
+                                </div>
+                            </div>
+                            <span class="material-symbols-rounded icon-arrow">chevron_right</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-logout-container animate-fade-in-up" style="animation-delay: 0.8s;">
+                    <button class="btn-logout-modern" onclick="handleLogout()">
+                        <span class="material-symbols-rounded">logout</span>
+                        Sign Out
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -519,9 +685,24 @@
                     <span class="material-symbols-rounded">add</span> Add Account
                 </button>
             </header>
-            <div class="accounts-summary-pill" style="margin: 0 20px 20px; background: #000; color: #fff; padding: 24px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-                <p style="font-size: 12px; font-weight: 600; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px;">Net Worth</p>
-                <h2 id="netWorthDisplay" style="font-size: 32px; font-weight: 800; margin: 4px 0;">$0.00</h2>
+            <div class="accounts-summary-card-premium">
+                <div class="card-bg-glow"></div>
+                <div class="card-content">
+                    <div class="card-header-mini">
+                        <span class="label">Total Net Worth</span>
+                        <div class="trend-badge positive">
+                            <span class="material-symbols-rounded">trending_up</span>
+                            <span>Live</span>
+                        </div>
+                    </div>
+                    <h2 id="netWorthDisplay">$0.00</h2>
+                    <div class="card-footer-mini">
+                        <span class="updated-time">Updated just now</span>
+                        <div class="avatar-stack">
+                            <img src="https://ui-avatars.com/api/?name=User&background=fff&color=1c1c1e" id="accountsAvatarMini" alt="User">
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="accounts-grid" id="accountsList" style="padding: 0 20px;">
                 <!-- Account cards populated by JS -->
@@ -567,31 +748,38 @@
 
         <!-- Add Account Modal -->
         <div class="modal-overlay" id="addAccountModal">
-            <div class="modal centered-card-modal">
+            <div class="modal exact-design animate-pop-in">
                 <div class="modal-header-exact">
                     <h3>Add Account</h3>
-                    <button class="close-btn-simple" onclick="closeModal('addAccountModal')">×</button>
+                    <button class="close-btn-exact" onclick="closeModal('addAccountModal')"><span class="material-symbols-rounded">close</span></button>
                 </div>
-                <form id="accountForm" class="form-standard">
-                    <div class="form-group">
-                        <label>Account Name</label>
-                        <input type="text" id="accountName" placeholder="e.g. HDFC Bank, My Wallet" required>
+                <div class="modal-body-exact" style="padding-top: 0;">
+                    <div class="modal-icon-pill-themed icon-blue" style="margin: 0 auto 20px;">
+                        <span class="material-symbols-rounded" style="font-size: 24px;">account_balance</span>
                     </div>
-                    <div class="form-group">
-                        <label>Account Type</label>
-                        <select id="accountType" class="settings-select">
-                            <option value="bank">Bank Account</option>
-                            <option value="wallet">Digital Wallet</option>
-                            <option value="cash">Cash / Physical</option>
-                            <option value="credit">Credit Card</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Initial Balance</label>
-                        <input type="number" id="accountBalance" placeholder="0.00" step="0.01" required>
-                    </div>
-                    <button type="submit" class="btn-add-cat" style="width: 100%; margin-top: 20px;">Create Account</button>
-                </form>
+                    
+                    <form id="accountForm" class="form-standard">
+                        <div class="form-group">
+                            <label style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: block;">Account Name</label>
+                            <input type="text" id="accountName" class="input-pill-modern" placeholder="e.g. HDFC Bank, My Wallet" required>
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: block;">Account Type</label>
+                            <select id="accountType" class="input-pill-modern" style="appearance: none;">
+                                <option value="bank">Bank Account</option>
+                                <option value="wallet">Digital Wallet</option>
+                                <option value="cash">Cash / Physical</option>
+                                <option value="credit">Credit Card</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: block;">Initial Balance</label>
+                            <input type="number" id="accountBalance" class="input-pill-modern" placeholder="0.00" step="0.01" required>
+                        </div>
+                        
+                        <button type="submit" class="btn-modal-primary" style="width: 100%; margin-top: 24px; padding: 16px; border-radius: 16px; background: #1e293b; color: #fff; font-weight: 800;">Create Account</button>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -663,55 +851,203 @@
 
         <!-- Add Investment Modal -->
         <div class="modal-overlay" id="addInvestmentModal">
-            <div class="modal centered-card-modal">
-                <div class="modal-header-exact">
+            <div class="modal simple-account-card animate-pop-in">
+                <button class="close-btn-simple" onclick="closeModal('addInvestmentModal')">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+                <div class="simple-card-header">
+                    <div class="modal-icon-circle icon-blue">
+                        <span class="material-symbols-rounded">trending_up</span>
+                    </div>
                     <h3>Add Holding</h3>
-                    <button class="close-btn-simple" onclick="closeModal('addInvestmentModal')">×</button>
                 </div>
-                <form id="investmentForm" class="form-standard">
-                    <div class="form-group"><label>Asset Name</label><input type="text" id="invAssetName" placeholder="e.g. TCS, BTC" required></div>
-                    <div class="form-group">
+                <form id="investmentForm" class="simple-card-body">
+                    <div class="simple-input-group">
+                        <label>Asset Name</label>
+                        <input type="text" id="invAssetName" placeholder="e.g. TCS, BTC" required>
+                    </div>
+                    <div class="simple-input-group">
                         <label>Type</label>
-                        <select id="invType" class="settings-select">
+                        <select id="invType" class="simple-select-field">
                             <option value="stock">Stock</option>
                             <option value="crypto">Crypto</option>
                             <option value="mf">Mutual Fund</option>
                         </select>
                     </div>
-                    <div class="form-group"><label>Quantity</label><input type="number" id="invQty" step="0.0001" required></div>
-                    <div class="form-group"><label>Buy Price</label><input type="number" id="invBuyPrice" step="0.01" required></div>
-                    <div class="form-group"><label>Current Price</label><input type="number" id="invCurrentPrice" step="0.01" required></div>
-                    <button type="submit" class="btn-add-cat" style="width: 100%; margin-top: 20px;">Add to Portfolio</button>
+                    <div class="simple-input-group">
+                        <label>Quantity</label>
+                        <input type="number" id="invQty" step="0.0001" placeholder="0.00" required>
+                    </div>
+                    <div class="simple-input-group">
+                        <label>Buy Price</label>
+                        <input type="number" id="invBuyPrice" step="0.01" placeholder="0.00" required>
+                    </div>
+                    <div class="simple-input-group">
+                        <label>Current Price</label>
+                        <input type="number" id="invCurrentPrice" step="0.01" placeholder="0.00" required>
+                    </div>
+                    
+                    <div class="modal-footer-btns">
+                        <button type="button" class="btn-modal-secondary" onclick="closeModal('addInvestmentModal')">Cancel</button>
+                        <button type="submit" class="btn-modal-primary">Add to Portfolio</button>
+                    </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Premium Alert Modal -->
+        <div class="modal-overlay" id="premiumAlertModal">
+            <div class="modal premium-alert-card animate-pop-in">
+                <div class="simple-card-header">
+                    <div class="modal-icon-circle icon-blue" id="alertIconBox">
+                        <span class="material-symbols-rounded" id="alertIcon">info</span>
+                    </div>
+                    <h3 id="alertTitle">Alert Title</h3>
+                </div>
+                <div class="alert-content">
+                    <p id="alertMessage">This is a custom alert message.</p>
+                </div>
+                <div class="modal-footer-btns">
+                    <button class="btn-modal-primary" onclick="closeModal('premiumAlertModal')">OK</button>
+                </div>
             </div>
         </div>
 
         <!-- Manage Account Modal -->
         <div class="modal-overlay" id="manageAccountModal">
-            <div class="modal centered-card-modal">
-                <div class="modal-header-exact">
+            <div class="modal simple-account-card animate-pop-in">
+                <button class="close-btn-simple" onclick="closeModal('manageAccountModal')">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+                
+                <div class="simple-card-header">
+                    <div class="modal-icon-circle icon-blue">
+                        <span class="material-symbols-rounded">person</span>
+                    </div>
                     <h3>Manage Account</h3>
-                    <button class="close-btn-simple" onclick="closeModal('manageAccountModal')"><span class="material-symbols-rounded">close</span></button>
                 </div>
-                <div class="account-details-list">
-                    <div class="account-detail-item">
+                
+                <div class="simple-card-body">
+                    <div class="simple-input-group">
                         <label>Full Name</label>
-                        <input type="text" id="accName" value="">
+                        <input type="text" id="accName" placeholder="Enter full name">
                     </div>
-                    <div class="account-detail-item">
+
+                    <div class="simple-input-group">
                         <label>Email Address</label>
-                        <input type="email" id="accEmail" value="" readonly>
+                        <input type="email" id="accEmail" readonly class="readonly-field">
                     </div>
-                    <div class="account-detail-item">
+
+                    <div class="simple-input-group">
                         <label>Username</label>
-                        <input type="text" id="accUser" value="">
+                        <input type="text" id="accUser" placeholder="Username">
                     </div>
-                    <div class="account-detail-item">
+
+                    <div class="simple-input-group">
                         <label>User ID</label>
-                        <input type="text" id="accIdDisplay" value="..." readonly style="background: #f8fafc; color: #94a3b8;">
+                        <input type="text" id="accIdDisplay" readonly class="readonly-field">
                     </div>
                 </div>
-                <button class="btn-add-cat" style="width: 100%; margin-top: 20px;" onclick="saveAccountDetails()">Save Changes</button>
+
+                <div class="modal-footer-btns">
+                    <button class="btn-modal-secondary" onclick="closeModal('manageAccountModal')">Cancel</button>
+                    <button class="btn-modal-primary" onclick="saveAccountDetails()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Lock Screen Overlay -->
+        <div id="appLockOverlay" class="lock-screen-overlay hidden">
+            <div class="lock-screen-content">
+                <div class="lock-icon-box animate-pulse">
+                    <span class="material-symbols-rounded">lock</span>
+                </div>
+                <h2>Expento Locked</h2>
+                <p>Enter your PIN to continue</p>
+                
+                <div class="pin-input-container">
+                    <input type="password" id="lockPinInput" maxlength="6" placeholder="••••••" readonly>
+                </div>
+                
+                <div class="pin-keypad">
+                    <button onclick="appendPin('1')">1</button>
+                    <button onclick="appendPin('2')">2</button>
+                    <button onclick="appendPin('3')">3</button>
+                    <button onclick="appendPin('4')">4</button>
+                    <button onclick="appendPin('5')">5</button>
+                    <button onclick="appendPin('6')">6</button>
+                    <button onclick="appendPin('7')">7</button>
+                    <button onclick="appendPin('8')">8</button>
+                    <button onclick="appendPin('9')">9</button>
+                    <button class="keypad-empty"></button>
+                    <button onclick="appendPin('0')">0</button>
+                    <button class="keypad-delete" onclick="deletePinDigit()">
+                        <span class="material-symbols-rounded">backspace</span>
+                    </button>
+                </div>
+                <button class="btn-logout-lock" onclick="handleLogout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Set/Change PIN Modal -->
+        <div class="modal-overlay" id="setPinModal">
+            <div class="modal simple-account-card animate-pop-in">
+                <button class="close-btn-simple" onclick="closeModal('setPinModal')">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+                <div class="simple-card-header">
+                    <div class="modal-icon-circle icon-blue">
+                        <span class="material-symbols-rounded">lock</span>
+                    </div>
+                    <h3>Set Secure PIN</h3>
+                </div>
+                <div class="simple-card-body centered-text">
+                    <p class="security-note">Set a 4 or 6 digit PIN to protect your financial data.</p>
+                    <div class="simple-input-group">
+                        <label>New PIN</label>
+                        <input type="password" id="newPinInput" maxlength="6" placeholder="Enter PIN">
+                    </div>
+                    <div class="simple-input-group">
+                        <label>Confirm PIN</label>
+                        <input type="password" id="confirmPinInput" maxlength="6" placeholder="Confirm PIN">
+                    </div>
+                </div>
+                <div class="modal-footer-btns">
+                    <button class="btn-modal-secondary" onclick="closeModal('setPinModal')">Cancel</button>
+                    <button class="btn-modal-primary" onclick="handleSetPin()">Set PIN</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Devices Modal -->
+        <div class="modal-overlay" id="manageDevicesModal">
+            <div class="modal simple-account-card animate-pop-in">
+                <button class="close-btn-simple" onclick="closeModal('manageDevicesModal')">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+                <div class="simple-card-header">
+                    <div class="modal-icon-circle icon-blue">
+                        <span class="material-symbols-rounded">devices</span>
+                    </div>
+                    <h3>Logged-in Devices</h3>
+                </div>
+                <div class="simple-card-body centered-text">
+                    <div class="device-list" id="deviceList">
+                        <!-- Current Device -->
+                        <div class="device-item active">
+                            <div class="device-icon"><span class="material-symbols-rounded">laptop_mac</span></div>
+                            <div class="device-info">
+                                <h4>Current Session</h4>
+                                <p id="currentDeviceInfo">Loading device info...</p>
+                                <span class="status-online">Online</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="security-info-text">If you don't recognize a device, change your password immediately.</p>
+                </div>
+                <div class="modal-footer-btns">
+                    <button class="btn-modal-primary" onclick="closeModal('manageDevicesModal')">Close</button>
+                </div>
             </div>
         </div>
 
@@ -892,104 +1228,102 @@
         </div>
     </div>
 
-    <!-- Receipt Modal (Deep Printer Slot Design) -->
+    <!-- Thermal Receipt Modal -->
     <div class="modal-overlay" id="receiptModal">
-        <div class="modal payment-status-design">
-            <div class="status-header">
-                <button class="icon-btn-ghost" onclick="closeModal('receiptModal')">
-                    <span class="material-symbols-rounded">arrow_back</span>
-                </button>
-                <h3>Payment Status</h3>
-                <button class="icon-btn-ghost">
-                    <span class="material-symbols-rounded">ios_share</span>
-                </button>
+        <div class="modal receipt-thermal-modal">
+            <!-- Printer Device UI -->
+            <div class="printer-device">
+                <div class="printer-led"></div>
+                <div class="printer-power-btn"></div>
+                <div class="printer-slot-shadow"></div>
+                <div class="printer-slot"></div>
             </div>
-            
-            <div class="receipt-printer-wrapper">
-                <div class="printer-slot-deep">
-                    <div class="printer-slot-inner"></div>
-                </div>
+
+            <div class="receipt-wrapper">
+                <div class="receipt-container">
+                    <!-- Perforated Top -->
+                    <div class="perforated-edge top"></div>
                 
-                <div class="receipt-paper">
-                    <div class="paper-inner-shadow"></div>
-                    
-                    <div class="paper-top-receipt">
-                        <div class="dashed-line"></div>
-                        <div class="mono-text" id="receiptId">Transaction - #TXN-2499</div>
-                        <div class="dashed-line"></div>
-                    </div>
-                    
-                    <div class="paper-totals">
-                        <div class="paper-row-flex">
-                            <span class="label-text">Total</span>
-                            <span class="amount-text" id="receiptAmount">$30,000</span>
+                <div class="receipt-content-paper">
+                    <header class="receipt-header-thermal">
+                        <h1 class="brand-mono">EXPENTO</h1>
+                        <p class="tagline-mono">Smart Finance. Better You.</p>
+                        <div class="dashed-divider"></div>
+                    </header>
+
+                    <div class="receipt-meta">
+                        <div class="meta-row">
+                            <span class="mono-label">DATE:</span>
+                            <span class="mono-value" id="receiptDate">29 Apr 2026, 10:24 AM</span>
                         </div>
-                        <div class="paper-row-flex" style="margin-top: 12px;">
-                            <span class="label-text">Date</span>
-                            <span class="amount-text-small" id="receiptDate">3 Feb 2026</span>
+                        <div class="meta-row">
+                            <span class="mono-label">TXN ID:</span>
+                            <span class="mono-value" id="receiptId">#TXN-99824401</span>
                         </div>
                     </div>
 
-                    <div class="paper-list-receipt">
-                        <div class="list-item-receipt">
-                            <div class="item-left-receipt">
-                                <div class="avatar-circle">
-                                    <span class="material-symbols-rounded">category</span>
-                                </div>
-                                <span class="item-name" id="receiptCategory">Food</span>
-                            </div>
-                            <div class="badge-receipt success">
-                                <span class="material-symbols-rounded icon-mini">check_circle</span> Paid
-                            </div>
+                    <div class="receipt-title-box">
+                        <h3>TRANSACTION RECEIPT</h3>
+                    </div>
+
+                    <div class="receipt-details">
+                        <div class="detail-row">
+                            <span class="mono-label">TYPE</span>
+                            <span class="mono-value" id="receiptType">Expense</span>
                         </div>
-                        <div class="list-item-receipt">
-                            <div class="item-left-receipt">
-                                <div class="avatar-circle">
-                                    <span class="material-symbols-rounded">receipt_long</span>
-                                </div>
-                                <span class="item-name" id="receiptNote">Pizza</span>
-                            </div>
-                            <div class="badge-receipt success">
-                                <span class="material-symbols-rounded icon-mini">check_circle</span> Paid
-                            </div>
+                        <div class="detail-row">
+                            <span class="mono-label">CATEGORY</span>
+                            <span class="mono-value" id="receiptCategory">Food & Dining</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="mono-label">ACCOUNT</span>
+                            <span class="mono-value" id="receiptAccount">Bank Account</span>
+                        </div>
+                        <div class="dashed-divider"></div>
+                    </div>
+
+                    <div class="receipt-total-section">
+                        <span class="total-label">TOTAL AMOUNT</span>
+                        <h2 class="total-amount-mono" id="receiptAmount">$3.61</h2>
+                    </div>
+
+                    <div class="stamp-container">
+                        <div class="paid-stamp" id="receiptStamp">
+                            <div class="stamp-inner">PAID</div>
                         </div>
                     </div>
 
-                    <div class="status-box-receipt">
-                        <div class="status-box-header">
-                            <span class="label-text">Payment Status</span>
-                            <span class="status-text-bold">SUCCESS</span>
+                    <footer class="receipt-footer-thermal">
+                        <div class="dashed-divider"></div>
+                        <p>Thank you for using EXPENTO</p>
+                        <p class="small-info">This is a system generated receipt</p>
+                        <div class="dashed-divider"></div>
+                        <div class="barcode-container">
+                            <div class="barcode-bars"></div>
+                            <p class="barcode-text">001928374655</p>
                         </div>
-                        <div class="progress-track-receipt">
-                            <div class="track-dot active"><span class="material-symbols-rounded">check</span></div>
-                            <div class="track-line active"></div>
-                            <div class="track-dot active"><span class="material-symbols-rounded">check</span></div>
-                            <div class="track-line active"></div>
-                            <div class="track-dot active"><span class="material-symbols-rounded">check</span></div>
-                            <div class="track-line active"></div>
-                            <div class="track-dot last"><div class="inner-dot"></div></div>
-                        </div>
-                    </div>
-
-                    <div class="paper-footer-btns">
-                        <button class="btn-dark-receipt" onclick="closeModal('receiptModal')">Done</button>
-                        <button class="btn-outline-receipt" onclick="window.print()">Download Invoice</button>
-                    </div>
+                    </footer>
                 </div>
+
+                <!-- Perforated Bottom -->
+                <div class="perforated-edge bottom"></div>
+            </div>
             </div>
 
-            <div class="method-section-receipt">
-                <div class="method-row-receipt">
-                    <span class="label-text">Payment Method</span>
-                    <div class="method-details-receipt">
-                        <span>Wallet Balance</span>
-                        <div class="card-icon-blue"></div>
-                    </div>
-                </div>
-                <button class="btn-pay-now" onclick="closeModal('receiptModal')">Done</button>
+            <div class="receipt-actions">
+                <button class="receipt-action-btn download" onclick="downloadReceipt()">
+                    <span class="material-symbols-rounded">download</span>
+                    Download Receipt
+                </button>
+                <button class="receipt-action-btn share" onclick="shareReceipt()">
+                    <span class="material-symbols-rounded">share</span>
+                    Share Receipt
+                </button>
+                <button class="receipt-close-btn" onclick="closeModal('receiptModal')">Close</button>
             </div>
         </div>
     </div>
+
 
     <!-- Add Budget Category Modal -->
     <div class="modal-overlay" id="addBudgetCategoryModal">
@@ -1091,28 +1425,54 @@
 
     <!-- Delete Confirmation Modal -->
     <div class="modal-overlay" id="deleteConfirmModal">
-        <div class="modal centered-card-modal" style="max-width: 340px; padding: 32px 24px; text-align: center;">
-            <div class="delete-icon-circle">
+        <div class="modal premium-alert-card">
+            <div class="alert-icon-circle danger">
                 <span class="material-symbols-rounded">delete_forever</span>
             </div>
-            <h3 style="font-size: 20px; font-weight: 800; margin: 20px 0 10px;">Are you sure?</h3>
-            <p style="color: #64748b; font-size: 14px; line-height: 1.5; margin-bottom: 24px;">This action cannot be undone. The item will be permanently removed.</p>
-            <div class="modal-footer-dual">
-                <button class="btn-cancel" onclick="closeModal('deleteConfirmModal')">No, Cancel</button>
-                <button class="btn-delete-final" id="confirmDeleteBtn">Yes, Delete</button>
+            <h3 class="alert-title" id="deleteConfirmTitle">Are you sure?</h3>
+            <p class="alert-message" id="deleteConfirmMsg">This action cannot be undone. The item will be permanently removed.</p>
+            <div class="alert-footer-dual">
+                <button class="btn-alert-cancel" onclick="closeModal('deleteConfirmModal')">Cancel</button>
+                <button class="btn-alert-danger" id="confirmDeleteBtn">Delete</button>
             </div>
         </div>
     </div>
 
     <!-- Alert / Success Modal -->
     <div class="modal-overlay" id="alertModal">
-        <div class="modal centered-card-modal" style="max-width: 320px; padding: 32px 24px; text-align: center;">
+        <div class="modal premium-alert-card">
             <div class="alert-icon-circle" id="alertIconBox">
                 <span class="material-symbols-rounded" id="alertIcon">check_circle</span>
             </div>
-            <h3 id="alertTitle" style="font-size: 20px; font-weight: 800; margin: 20px 0 10px;">Success!</h3>
-            <p id="alertMessage" style="color: #64748b; font-size: 14px; line-height: 1.5; margin-bottom: 24px;">Your changes have been saved successfully.</p>
-            <button class="btn-add-cat" style="width: 100%;" onclick="closeModal('alertModal')">Got it!</button>
+            <h3 class="alert-title" id="alertTitle">Success!</h3>
+            <p class="alert-message" id="alertMessage">Your changes have been saved successfully.</p>
+            <button class="btn-alert-primary" onclick="closeModal('alertModal')">Got it!</button>
+        </div>
+    </div>
+
+    <!-- Account Details Modal -->
+    <div class="modal-overlay" id="accountDetailsModal">
+        <div class="modal exact-design animate-pop-in">
+            <div class="modal-header-exact">
+                <h3>Account Details</h3>
+                <button class="close-btn-exact" onclick="closeModal('accountDetailsModal')"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="modal-body-exact" id="accountDetailsContent" style="padding: 0 24px 24px;">
+                <!-- Dynamic Content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Investment Details Modal -->
+    <div class="modal-overlay" id="investmentDetailsModal">
+        <div class="modal exact-design animate-pop-in">
+            <div class="modal-header-exact">
+                <h3>Investment Details</h3>
+                <button class="close-btn-exact" onclick="closeModal('investmentDetailsModal')"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div class="modal-body-exact" id="investmentDetailsContent" style="padding: 0 24px 24px;">
+                <!-- Dynamic Content -->
+            </div>
         </div>
     </div>
 
@@ -1121,6 +1481,23 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <script src="{{ url_for('static', filename='js/main.js', v=10) }}"></script>
+    <!-- Notification Panel -->
+    <div id="notificationPanel" class="notification-panel" onclick="toggleNotifications()">
+        <div class="notification-content" onclick="event.stopPropagation()">
+            <div class="notif-header">
+                <h2>Notifications</h2>
+                <button class="header-icon-btn" onclick="toggleNotifications()"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div id="notifList" class="notif-list">
+                <!-- Notifications will be rendered here -->
+                <div class="empty-state-modern" style="padding: 40px 20px;">
+                    <span class="material-symbols-rounded" style="font-size: 48px; color: var(--text-secondary); opacity: 0.3;">notifications_off</span>
+                    <h4 style="margin-top: 16px; color: var(--text-secondary);">No new notifications</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js', v=22) }}"></script>
 </body>
 </html>
